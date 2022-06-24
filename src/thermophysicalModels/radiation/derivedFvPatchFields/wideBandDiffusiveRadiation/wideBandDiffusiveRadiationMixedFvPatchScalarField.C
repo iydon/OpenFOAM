@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -68,7 +68,8 @@ wideBandDiffusiveRadiationMixedFvPatchScalarField
     (
         p,
         ptf.emissivityMethod(),
-        ptf.emissivity_
+        ptf.emissivity_,
+        mapper
     ),
     TName_(ptf.TName_)
 {}
@@ -148,6 +149,27 @@ wideBandDiffusiveRadiationMixedFvPatchScalarField
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 void Foam::radiation::wideBandDiffusiveRadiationMixedFvPatchScalarField::
+autoMap
+(
+    const fvPatchFieldMapper& m
+)
+{
+    mixedFvPatchScalarField::autoMap(m);
+    radiationCoupledBase::autoMap(m);
+}
+
+
+void Foam::radiation::wideBandDiffusiveRadiationMixedFvPatchScalarField::rmap
+(
+    const fvPatchScalarField& ptf,
+    const labelList& addr
+)
+{
+    mixedFvPatchScalarField::rmap(ptf, addr);
+    radiationCoupledBase::rmap(ptf, addr);
+}
+
+void Foam::radiation::wideBandDiffusiveRadiationMixedFvPatchScalarField::
 updateCoeffs()
 {
     if (this->updated())
@@ -222,7 +244,7 @@ updateCoeffs()
                   + temissivity[facei]*Eb[facei]
                 )/pi;
 
-            // Emmited heat flux from this ray direction
+            // Emitted heat flux from this ray direction
             qem[facei] = refValue()[facei]*nAve[facei];
         }
         else
@@ -230,7 +252,7 @@ updateCoeffs()
             // direction into the wall
             valueFraction()[facei] = 0.0;
             refGrad()[facei] = 0.0;
-            refValue()[facei] = 0.0; //not used
+            refValue()[facei] = 0.0; // not used
 
             // Incident heat flux on this ray direction
             qin[facei] = Iw[facei]*nAve[facei];

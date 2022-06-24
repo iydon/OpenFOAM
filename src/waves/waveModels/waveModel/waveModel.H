@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2017-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -141,6 +141,16 @@ public:
         //  coordinates. Local x is aligned with the mean velocity, and z with
         //  negative gravity.
         virtual tmp<vector2DField> velocity
+        (
+            const scalar t,
+            const scalar u,
+            const vector2DField& xz
+        ) const = 0;
+
+        //- Get the wave pressure at a given time, mean velocity and local
+        //  coordinates. Local x is aligned with the mean velocity, and z with
+        //  negative gravity.
+        virtual tmp<scalarField> pressure
         (
             const scalar t,
             const scalar u,

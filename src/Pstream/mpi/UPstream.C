@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -44,6 +44,8 @@ Note
     #define MPI_SCALAR MPI_FLOAT
 #elif defined(WM_DP)
     #define MPI_SCALAR MPI_DOUBLE
+#elif defined(WM_LP)
+    #define MPI_SCALAR MPI_LONG_DOUBLE
 #endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -63,22 +65,41 @@ void Foam::UPstream::addValidParOptions(HashTable<string>& validParOptions)
 }
 
 
-bool Foam::UPstream::init(int& argc, char**& argv)
+bool Foam::UPstream::init(int& argc, char**& argv, const bool needsThread)
 {
-    //MPI_Init(&argc, &argv);
+    // MPI_Init(&argc, &argv);
     int provided_thread_support;
     MPI_Init_thread
     (
         &argc,
         &argv,
-        MPI_THREAD_MULTIPLE,
+        (
+            needsThread
+          ? MPI_THREAD_MULTIPLE
+          : MPI_THREAD_SINGLE
+        ),
         &provided_thread_support
     );
 
+    // int numprocs;
+    // MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+    // int myRank;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+
+    int myGlobalRank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &myGlobalRank);
+    MPI_Comm_split
+    (
+        MPI_COMM_WORLD,
+        1,
+        myGlobalRank,
+        &PstreamGlobals::MPI_COMM_FOAM
+    );
+
     int numprocs;
-    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+    MPI_Comm_size(PstreamGlobals::MPI_COMM_FOAM, &numprocs);
     int myRank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    MPI_Comm_rank(PstreamGlobals::MPI_COMM_FOAM, &myRank);
 
     if (debug)
     {
@@ -119,12 +140,12 @@ bool Foam::UPstream::init(int& argc, char**& argv)
     }
     #endif
 
-    //int processorNameLen;
-    //char processorName[MPI_MAX_PROCESSOR_NAME];
+    // int processorNameLen;
+    // char processorName[MPI_MAX_PROCESSOR_NAME];
     //
-    //MPI_Get_processor_name(processorName, &processorNameLen);
-    //processorName[processorNameLen] = '\0';
-    //Pout<< "Processor name:" << processorName << endl;
+    // MPI_Get_processor_name(processorName, &processorNameLen);
+    // processorName[processorNameLen] = '\0';
+    // Pout<< "Processor name:" << processorName << endl;
 
     return true;
 }
@@ -173,14 +194,14 @@ void Foam::UPstream::exit(int errnum)
     }
     else
     {
-        MPI_Abort(MPI_COMM_WORLD, errnum);
+        MPI_Abort(PstreamGlobals::MPI_COMM_FOAM, errnum);
     }
 }
 
 
 void Foam::UPstream::abort()
 {
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    MPI_Abort(PstreamGlobals::MPI_COMM_FOAM, 1);
 }
 
 
@@ -285,7 +306,7 @@ void Foam::reduce
         1,
         MPI_SCALAR,
         MPI_SUM,
-        0,              //root
+        0,              // root
         PstreamGlobals::MPICommunicators_[communicator],
         &request
     );
@@ -581,8 +602,13 @@ void Foam::UPstream::allocatePstreamCommunicator
                 << UPstream::worldComm << Foam::exit(FatalError);
         }
 
-        PstreamGlobals::MPICommunicators_[index] = MPI_COMM_WORLD;
-        MPI_Comm_group(MPI_COMM_WORLD, &PstreamGlobals::MPIGroups_[index]);
+        PstreamGlobals::MPICommunicators_[index] =
+            PstreamGlobals::MPI_COMM_FOAM;
+        MPI_Comm_group
+        (
+            PstreamGlobals::MPI_COMM_FOAM,
+            &PstreamGlobals::MPIGroups_[index]
+        );
         MPI_Comm_rank
         (
             PstreamGlobals::MPICommunicators_[index],
@@ -593,7 +619,7 @@ void Foam::UPstream::allocatePstreamCommunicator
         int numProcs;
         MPI_Comm_size(PstreamGlobals::MPICommunicators_[index], &numProcs);
 
-        //procIDs_[index] = identity(numProcs);
+        // procIDs_[index] = identity(numProcs);
         procIDs_[index].setSize(numProcs);
         forAll(procIDs_[index], i)
         {
@@ -811,7 +837,7 @@ int Foam::UPstream::allocateTag(const char* s)
 
     if (debug)
     {
-        //if (UPstream::lateBlocking > 0)
+        // if (UPstream::lateBlocking > 0)
         //{
         //    string& poutp = Pout.prefix();
         //    poutp[poutp.size()-2*(UPstream::lateBlocking+2)+tag] = 'X';
@@ -840,7 +866,7 @@ int Foam::UPstream::allocateTag(const word& s)
 
     if (debug)
     {
-        //if (UPstream::lateBlocking > 0)
+        // if (UPstream::lateBlocking > 0)
         //{
         //    string& poutp = Pout.prefix();
         //    poutp[poutp.size()-2*(UPstream::lateBlocking+2)+tag] = 'X';
@@ -859,7 +885,7 @@ void Foam::UPstream::freeTag(const char* s, const int tag)
 {
     if (debug)
     {
-        //if (UPstream::lateBlocking > 0)
+        // if (UPstream::lateBlocking > 0)
         //{
         //    string& poutp = Pout.prefix();
         //    poutp[poutp.size()-2*(UPstream::lateBlocking+2)+tag] = ' ';
@@ -875,7 +901,7 @@ void Foam::UPstream::freeTag(const word& s, const int tag)
 {
     if (debug)
     {
-        //if (UPstream::lateBlocking > 0)
+        // if (UPstream::lateBlocking > 0)
         //{
         //    string& poutp = Pout.prefix();
         //    poutp[poutp.size()-2*(UPstream::lateBlocking+2)+tag] = ' ';

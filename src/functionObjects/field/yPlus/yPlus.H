@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013-2016 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -23,9 +23,6 @@ License
 
 Class
     Foam::functionObjects::yPlus
-
-Group
-    grpFieldFunctionObjects
 
 Description
     Evaluates and outputs turbulence y+ for models. Values written to
@@ -98,10 +95,9 @@ class yPlus
         virtual void writeFileHeader(const label i);
 
         //- Calculate y+
-        void calcYPlus
+        tmp<volScalarField> calcYPlus
         (
-            const turbulenceModel& turbModel,
-            volScalarField& yPlus
+            const turbulenceModel& turbModel
         );
 
         //- Disallow default bitwise copy construct

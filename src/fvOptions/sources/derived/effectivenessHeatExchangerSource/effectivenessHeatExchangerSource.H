@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
+   \\    /   O peration     | Website:  https://openfoam.org
     \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
@@ -211,7 +211,7 @@ private:
         //- Initialise heat exchanger source model
         void initialise();
 
-        //- Calculate total area of faceZone accross processors
+        //- Calculate total area of faceZone across processors
         void calculateTotalArea(scalar& area);
 
 

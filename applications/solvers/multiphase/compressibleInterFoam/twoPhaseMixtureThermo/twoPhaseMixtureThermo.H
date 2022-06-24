@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -112,6 +112,9 @@ public:
 
         //- Update mixture properties
         virtual void correct();
+
+        //- Return the name of the thermo physics
+        virtual word thermoName() const;
 
         //- Return true if the equation of state is incompressible
         //  i.e. rho != f(p)
@@ -242,6 +245,9 @@ public:
                 const label patchi
             ) const;
 
+            //- Molecular weight [kg/kmol]
+            virtual tmp<volScalarField> W() const;
+
 
         // Fields derived from transport state variables
 
@@ -259,6 +265,12 @@ public:
             (
                 const label patchi
             ) const;
+
+            //- Thermal diffusivity for energy of mixture [kg/m/s]
+            virtual tmp<volScalarField> alphahe() const;
+
+            //- Thermal diffusivity for energy of mixture for patch [kg/m/s]
+            virtual tmp<scalarField> alphahe(const label patchi) const;
 
             //- Effective thermal diffusivity of mixture [J/m/s/K]
             virtual tmp<volScalarField> kappaEff

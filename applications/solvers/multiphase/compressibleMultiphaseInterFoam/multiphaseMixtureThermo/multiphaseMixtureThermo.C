@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -149,6 +149,21 @@ void Foam::multiphaseMixtureThermo::correctRho(const volScalarField& dp)
     {
         phasei().thermo().rho() +=  phasei().thermo().psi()*dp;
     }
+}
+
+
+Foam::word Foam::multiphaseMixtureThermo::thermoName() const
+{
+    PtrDictionary<phaseModel>::const_iterator phasei = phases_.begin();
+
+    word name = phasei().thermo().thermoName();
+
+    for (++ phasei; phasei != phases_.end(); ++ phasei)
+    {
+        name += ',' + phasei().thermo().thermoName();
+    }
+
+    return name;
 }
 
 
@@ -521,6 +536,21 @@ Foam::tmp<Foam::scalarField> Foam::multiphaseMixtureThermo::CpByCpv
 }
 
 
+Foam::tmp<Foam::volScalarField> Foam::multiphaseMixtureThermo::W() const
+{
+    PtrDictionary<phaseModel>::const_iterator phasei = phases_.begin();
+
+    tmp<volScalarField> tW(phasei()*phasei().thermo().W());
+
+    for (++phasei; phasei != phases_.end(); ++phasei)
+    {
+        tW.ref() += phasei()*phasei().thermo().W();
+    }
+
+    return tW;
+}
+
+
 Foam::tmp<Foam::volScalarField> Foam::multiphaseMixtureThermo::nu() const
 {
     return mu()/rho();
@@ -570,6 +600,45 @@ Foam::tmp<Foam::scalarField> Foam::multiphaseMixtureThermo::kappa
     }
 
     return tkappa;
+}
+
+
+Foam::tmp<Foam::volScalarField> Foam::multiphaseMixtureThermo::alphahe() const
+{
+    PtrDictionary<phaseModel>::const_iterator phasei = phases_.begin();
+
+    tmp<volScalarField> talphaEff(phasei()*phasei().thermo().alphahe());
+
+    for (++phasei; phasei != phases_.end(); ++phasei)
+    {
+        talphaEff.ref() += phasei()*phasei().thermo().alphahe();
+    }
+
+    return talphaEff;
+}
+
+
+Foam::tmp<Foam::scalarField> Foam::multiphaseMixtureThermo::alphahe
+(
+    const label patchi
+) const
+{
+    PtrDictionary<phaseModel>::const_iterator phasei = phases_.begin();
+
+    tmp<scalarField> talphaEff
+    (
+        phasei().boundaryField()[patchi]
+       *phasei().thermo().alphahe(patchi)
+    );
+
+    for (++phasei; phasei != phases_.end(); ++phasei)
+    {
+        talphaEff.ref() +=
+            phasei().boundaryField()[patchi]
+           *phasei().thermo().alphahe(patchi);
+    }
+
+    return talphaEff;
 }
 
 
@@ -859,7 +928,7 @@ void Foam::multiphaseMixtureThermo::correctContactAngle
             scalar uTheta = tp().uTheta();
 
             // Calculate the dynamic contact angle if required
-            if (uTheta > SMALL)
+            if (uTheta > small)
             {
                 scalar thetaA = convertToRad*tp().thetaA(matched);
                 scalar thetaR = convertToRad*tp().thetaR(matched);
@@ -879,7 +948,7 @@ void Foam::multiphaseMixtureThermo::correctContactAngle
                 );
 
                 // Normalise nWall
-                nWall /= (mag(nWall) + SMALL);
+                nWall /= (mag(nWall) + small);
 
                 // Calculate Uwall resolved normal to the interface parallel to
                 // the interface
@@ -1021,8 +1090,8 @@ void Foam::multiphaseMixtureThermo::solveAlphas
             alphaPhiCorr,
             zeroField(),
             zeroField(),
-            1,
-            0,
+            oneField(),
+            zeroField(),
             true
         );
 

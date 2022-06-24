@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -56,9 +56,7 @@ void Foam::blockMesh::calcMergeInfo()
     }
 
     // set unused to -1
-    mergeList_.setSize(nPoints_);
-    mergeList_ = -1;
-
+    mergeList_.setSize(nPoints_, -1);
 
     const pointField& blockPoints = topology().points();
     const cellList& blockCells = topology().cells();
@@ -110,15 +108,18 @@ void Foam::blockMesh::calcMergeInfo()
         // point to point distance on the block face.
         // At the same time merge collated points on the block's faces
         // (removes boundary poles etc.)
-        // Collated points detected by initally taking a constant factor of
+        // Collated points detected by initially taking a constant factor of
         // the size of the block.
 
-        boundBox bb(blockCells[blockPlabel].points(blockFaces, blockPoints));
-        const scalar mergeSqrDist = magSqr(10*SMALL*bb.span());
+        const boundBox bb
+        (
+            blockCells[blockPlabel].points(blockFaces, blockPoints)
+        );
+        const scalar mergeSqrDist = magSqr(50*small*bb.span());
 
         // This is an N^2 algorithm
 
-        scalar sqrMergeTol = GREAT;
+        scalar sqrMergeTol = great;
 
         forAll(blockPfaceFaces, blockPfaceFaceLabel)
         {
@@ -212,7 +213,11 @@ void Foam::blockMesh::calcMergeInfo()
         const List<FixedList<label, 4>>& blockNfaceFaces =
             blocks[blockNlabel].boundaryPatches()[blockNfaceLabel];
 
-        if (blockPfaceFaces.size() != blockNfaceFaces.size())
+        if
+        (
+            checkFaceCorrespondence_
+         && blockPfaceFaces.size() != blockNfaceFaces.size()
+        )
         {
             FatalErrorInFunction
                 << "Inconsistent number of faces between block pair "
@@ -544,35 +549,29 @@ void Foam::blockMesh::calcMergeInfo()
     }
 
 
-    // Sort merge list to return new point label (in new shorter list)
-    // given old point label
-    label newPointLabel = 0;
+    // Sort merge list and count number of unique points
+    label nUniqPoints = 0;
 
-    forAll(mergeList_, pointLabel)
+    forAll(mergeList_, pointi)
     {
-        if (mergeList_[pointLabel] > pointLabel)
+        if (mergeList_[pointi] > pointi)
         {
             FatalErrorInFunction
                 << "Merge list contains point index out of range"
                 << exit(FatalError);
         }
 
-        if
-        (
-            mergeList_[pointLabel] == -1
-         || mergeList_[pointLabel] == pointLabel
-        )
+        if (mergeList_[pointi] == -1 || mergeList_[pointi] == pointi)
         {
-            mergeList_[pointLabel] = newPointLabel;
-            newPointLabel++;
+            mergeList_[pointi] = nUniqPoints++;
         }
         else
         {
-            mergeList_[pointLabel] = mergeList_[mergeList_[pointLabel]];
+            mergeList_[pointi] = mergeList_[mergeList_[pointi]];
         }
     }
 
-    nPoints_ = newPointLabel;
+    nPoints_ = nUniqPoints;
 }
 
 

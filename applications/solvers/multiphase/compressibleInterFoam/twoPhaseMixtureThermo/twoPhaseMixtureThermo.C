@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
+   \\    /   O peration     | Website:  https://openfoam.org
     \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ License
 #include "twoPhaseMixtureThermo.H"
 #include "gradientEnergyFvPatchScalarField.H"
 #include "mixedEnergyFvPatchScalarField.H"
-
+#include "collatedFileOperation.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -80,6 +80,10 @@ Foam::twoPhaseMixtureThermo::twoPhaseMixtureThermo
         T2.write();
     }
 
+    // Note: we're writing files to be read in immediately afterwards.
+    //       Avoid any thread-writing problems.
+    fileHandler().flush();
+
     thermo1_ = rhoThermo::New(U.mesh(), phase1Name());
     thermo2_ = rhoThermo::New(U.mesh(), phase2Name());
 
@@ -117,6 +121,12 @@ void Foam::twoPhaseMixtureThermo::correct()
     alpha_ = alpha1()*thermo1_->alpha() + alpha2()*thermo2_->alpha();
 
     interfaceProperties::correct();
+}
+
+
+Foam::word Foam::twoPhaseMixtureThermo::thermoName() const
+{
+    return thermo1_->thermoName() + ',' + thermo2_->thermoName();
 }
 
 
@@ -297,6 +307,12 @@ Foam::tmp<Foam::scalarField> Foam::twoPhaseMixtureThermo::CpByCpv
 }
 
 
+Foam::tmp<Foam::volScalarField> Foam::twoPhaseMixtureThermo::W() const
+{
+    return alpha1()*thermo1_->W() + alpha2()*thermo1_->W();
+}
+
+
 Foam::tmp<Foam::volScalarField> Foam::twoPhaseMixtureThermo::nu() const
 {
     return mu()/(alpha1()*thermo1_->rho() + alpha2()*thermo2_->rho());
@@ -334,6 +350,25 @@ Foam::tmp<Foam::scalarField> Foam::twoPhaseMixtureThermo::kappa
 }
 
 
+Foam::tmp<Foam::volScalarField> Foam::twoPhaseMixtureThermo::alphahe() const
+{
+    return
+        alpha1()*thermo1_->alphahe()
+      + alpha2()*thermo2_->alphahe();
+}
+
+
+Foam::tmp<Foam::scalarField> Foam::twoPhaseMixtureThermo::alphahe
+(
+    const label patchi
+) const
+{
+    return
+        alpha1().boundaryField()[patchi]*thermo1_->alphahe(patchi)
+      + alpha2().boundaryField()[patchi]*thermo2_->alphahe(patchi);
+}
+
+
 Foam::tmp<Foam::volScalarField> Foam::twoPhaseMixtureThermo::kappaEff
 (
     const volScalarField& alphat
@@ -353,8 +388,7 @@ Foam::tmp<Foam::scalarField> Foam::twoPhaseMixtureThermo::kappaEff
 {
     return
         alpha1().boundaryField()[patchi]*thermo1_->kappaEff(alphat, patchi)
-      + alpha2().boundaryField()[patchi]*thermo2_->kappaEff(alphat, patchi)
-    ;
+      + alpha2().boundaryField()[patchi]*thermo2_->kappaEff(alphat, patchi);
 }
 
 
@@ -377,8 +411,7 @@ Foam::tmp<Foam::scalarField> Foam::twoPhaseMixtureThermo::alphaEff
 {
     return
         alpha1().boundaryField()[patchi]*thermo1_->alphaEff(alphat, patchi)
-      + alpha2().boundaryField()[patchi]*thermo2_->alphaEff(alphat, patchi)
-    ;
+      + alpha2().boundaryField()[patchi]*thermo2_->alphaEff(alphat, patchi);
 }
 
 

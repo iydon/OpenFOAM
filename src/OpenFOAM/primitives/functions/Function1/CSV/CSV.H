@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
+   \\    /   O peration     | Website:  https://openfoam.org
     \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class CSV
         //- Read csv data table
         void read();
 
-        //- Read the next value from the splitted string
+        //- Read the next value from the split string
         Type readValue(const List<string>&);
 
         //- Disallow default bitwise assignment
@@ -126,12 +126,6 @@ public:
         //- Copy constructor
         CSV(const CSV<Type>& tbl);
 
-        //- Construct and return a clone
-        virtual tmp<Function1<Type>> clone() const
-        {
-            return tmp<Function1<Type>>(new CSV<Type>(*this));
-        }
-
 
     //- Destructor
     virtual ~CSV();
@@ -148,10 +142,10 @@ public:
 
 
 template<>
-label CSV<label>::readValue(const List<string>& splitted);
+label CSV<label>::readValue(const List<string>& split);
 
 template<>
-Foam::scalar CSV<scalar>::readValue(const List<string>& splitted);
+Foam::scalar CSV<scalar>::readValue(const List<string>& split);
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2015-2016 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2015-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -27,7 +27,7 @@ Class
 Description
     Class which represents a phase with a thermodynamic model. Provides access
     to the thermodynamic variables. Note that the thermo model itself is not
-    returned as this class could be substituted in the hierarcy for one which
+    returned as this class could be substituted in the hierarchy for one which
     mirrors the functionality, but does not include a thermo model; an
     incompressible phase model, for example.
 
@@ -49,7 +49,7 @@ namespace Foam
 class rhoThermo;
 
 /*---------------------------------------------------------------------------*\
-                           Class phaseModel Declaration
+                      Class ThermoPhaseModel Declaration
 \*---------------------------------------------------------------------------*/
 
 template<class BasePhaseModel, class ThermoType>
@@ -62,10 +62,7 @@ protected:
     // Protected data
 
         //- Thermophysical model
-        autoPtr<ThermoType> thermoPtr_;
-
-        //- Thermophysical model
-        ThermoType* thermo_;
+        autoPtr<ThermoType> thermo_;
 
 
 public:
@@ -76,8 +73,7 @@ public:
         (
             const phaseSystem& fluid,
             const word& phaseName,
-            const label index,
-            const bool createThermo = true
+            const label index
         );
 
 
@@ -89,12 +85,14 @@ public:
 
         // Thermo
 
-            //- Return const access to the thermophysical model
+            //- Return whether the phase is compressible
+            virtual bool compressible() const;
+
+            //- Return the thermophysical model
             virtual const rhoThermo& thermo() const;
 
-            //- Return non-const access to the thermophysical model
-            //  for correction
-            virtual rhoThermo& thermo();
+            //- Access the thermophysical model
+            virtual rhoThermo& thermoRef();
 
             //- Return the density field
             virtual tmp<volScalarField> rho() const;
@@ -105,47 +103,67 @@ public:
             //- Return the laminar dynamic viscosity
             virtual tmp<volScalarField> mu() const;
 
-            //- Access the laminar dynamic viscosity
+            //- Return the laminar dynamic viscosity on a patch
             virtual tmp<scalarField> mu(const label patchi) const;
 
             //- Return the laminar kinematic viscosity
             virtual tmp<volScalarField> nu() const;
 
-            //- Access the laminar kinematic viscosity
+            //- Return the laminar kinematic viscosity on a patch
             virtual tmp<scalarField> nu(const label patchi) const;
 
-            //- Return the laminar thermal conductivity
+            //- Thermal diffusivity for enthalpy of mixture [kg/m/s]
+            virtual tmp<volScalarField> alpha() const;
+
+            //- Thermal diffusivity for enthalpy of mixture for patch [kg/m/s]
+            virtual tmp<scalarField> alpha(const label patchi) const;
+
+            //- Thermal diffusivity for temperature of mixture [J/m/s/K]
             virtual tmp<volScalarField> kappa() const;
 
-            //- Access the laminar thermal conductivity
+            //- Thermal diffusivity for temperature of mixture
+            //  for patch [J/m/s/K]
             virtual tmp<scalarField> kappa(const label patchi) const;
 
-            //- Return the laminar thermal conductivity
+            //- Thermal diffusivity for energy of mixture [kg/m/s]
+            virtual tmp<volScalarField> alphahe() const;
+
+            //- Thermal diffusivity for energy of mixture for patch [kg/m/s]
+            virtual tmp<scalarField> alphahe(const label patchi) const;
+
+
+        // Turbulence
+
+            //- Effective thermal turbulent diffusivity for temperature
+            //  of mixture for patch [J/m/s/K]
+            using BasePhaseModel::kappaEff;
+
+            //- Effective thermal turbulent diffusivity for temperature
+            //  of mixture [J/m/s/K]
             virtual tmp<volScalarField> kappaEff
             (
                 const volScalarField& alphat
             ) const;
 
-            //- Access the laminar thermal conductivity
+            //- Effective thermal turbulent diffusivity for temperature
+            //  of mixture for patch [J/m/s/K]
             virtual tmp<scalarField> kappaEff
             (
                 const scalarField& alphat,
                 const label patchi
             ) const;
 
-            //- Return the thermal diffusivity for enthalpy
-            virtual tmp<volScalarField> alpha() const;
+            //- Effective thermal turbulent diffusivity of mixture [kg/m/s]
+            using BasePhaseModel::alphaEff;
 
-            //- Return the thermal diffusivity for enthalpy on a patch
-            virtual tmp<scalarField> alpha(const label patchi) const;
-
-            //- Return the thermal diffusivity for enthalpy
+            //- Effective thermal turbulent diffusivity of mixture [kg/m/s]
             virtual tmp<volScalarField> alphaEff
             (
                 const volScalarField& alphat
             ) const;
 
-            //- Return the thermal diffusivity for enthalpy on a patch
+            //- Effective thermal turbulent diffusivity of mixture
+            //  for patch [kg/m/s]
             virtual tmp<scalarField> alphaEff
             (
                 const scalarField& alphat,

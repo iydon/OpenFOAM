@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -164,7 +164,7 @@ void Foam::GAMGSolver::Vcycle
     const direction cmpt
 ) const
 {
-    //debug = 2;
+    // debug = 2;
 
     const label coarsestLevel = matrixLevels_.size() - 1;
 
@@ -183,7 +183,7 @@ void Foam::GAMGSolver::Vcycle
         if (coarseSources.set(leveli + 1))
         {
             // If the optional pre-smoothing sweeps are selected
-            // smooth the coarse-grid field for the restriced source
+            // smooth the coarse-grid field for the restricted source
             if (nPreSweeps_)
             {
                 coarseCorrFields[leveli] = 0.0;
@@ -561,27 +561,27 @@ void Foam::GAMGSolver::solveCoarsestLevel
     {
         coarsestLUMatrixPtr_->solve(coarsestCorrField, coarsestSource);
     }
-    //else if
+    // else if
     //(
     //    agglomeration_.processorAgglomerate()
     // && procMatrixLevels_.set(coarsestLevel)
     //)
     //{
-    //    //const labelList& agglomProcIDs = agglomeration_.agglomProcIDs
+    //    // const labelList& agglomProcIDs = agglomeration_.agglomProcIDs
     //    //(
     //    //    coarsestLevel
     //    //);
     //    //
-    //    //scalarField allSource;
+    //    // scalarField allSource;
     //    //
-    //    //globalIndex cellOffsets;
-    //    //if (Pstream::myProcNo(coarseComm) == agglomProcIDs[0])
+    //    // globalIndex cellOffsets;
+    //    // if (Pstream::myProcNo(coarseComm) == agglomProcIDs[0])
     //    //{
     //    //    cellOffsets.offsets() =
     //    //        agglomeration_.cellOffsets(coarsestLevel);
     //    //}
     //    //
-    //    //cellOffsets.gather
+    //    // cellOffsets.gather
     //    //(
     //    //    coarseComm,
     //    //    agglomProcIDs,
@@ -589,8 +589,8 @@ void Foam::GAMGSolver::solveCoarsestLevel
     //    //    allSource
     //    //);
     //    //
-    //    //scalarField allCorrField;
-    //    //solverPerformance coarseSolverPerf;
+    //    // scalarField allCorrField;
+    //    // solverPerformance coarseSolverPerf;
     //
     //    label solveComm = agglomeration_.procCommunicator(coarsestLevel);
     //
@@ -643,8 +643,8 @@ void Foam::GAMGSolver::solveCoarsestLevel
     //    Pout<< "done master solve." << endl;
     //
     //    //// Scatter to all processors
-    //    //coarsestCorrField.setSize(coarsestSource.size());
-    //    //cellOffsets.scatter
+    //    // coarsestCorrField.setSize(coarsestSource.size());
+    //    // cellOffsets.scatter
     //    //(
     //    //    coarseComm,
     //    //    agglomProcIDs,

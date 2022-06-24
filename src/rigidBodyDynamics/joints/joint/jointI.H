@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2016 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2016-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,8 +25,9 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-inline Foam::RBD::joint::joint(const label nDoF)
+inline Foam::RBD::joint::joint(const rigidBodyModel& model, const label nDoF)
 :
+    model_(model),
     S_(nDoF),
     index_(0),
     qIndex_(0)
@@ -62,6 +63,14 @@ inline const Foam::List<Foam::spatialVector>& Foam::RBD::joint::S() const
 
 
 // * * * * * * * * * * * * * * * Member Operators  * * * * * * * * * * * * * //
+
+inline void Foam::RBD::joint::operator=(const joint& j)
+{
+    S_ = j.S_;
+    index_ = j.index_;
+    qIndex_ = j.qIndex_;
+}
+
 
 inline Foam::quaternion Foam::RBD::joint::unitQuaternion
 (
@@ -104,7 +113,7 @@ Foam::autoPtr<Foam::RBD::joint> Foam::RBD::joint::iNew::operator()
 ) const
 {
     dictionary dict(is);
-    return New(dict);
+    return New(model_, dict);
 }
 
 

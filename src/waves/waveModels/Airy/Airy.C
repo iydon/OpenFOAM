@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2017-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -66,7 +66,7 @@ Foam::tmp<Foam::scalarField> Foam::waveModels::Airy::angle
 
 bool Foam::waveModels::Airy::deep() const
 {
-    return k()*depth() > log(GREAT);
+    return k()*depth() > log(great);
 }
 
 
@@ -117,7 +117,7 @@ Foam::waveModels::Airy::Airy
     waveModel(db, dict),
     length_(readScalar(dict.lookup("length"))),
     phase_(readScalar(dict.lookup("phase"))),
-    depth_(dict.lookupOrDefault<scalar>("depth", log(2*GREAT)/k()))
+    depth_(dict.lookupOrDefault<scalar>("depth", log(2*great)/k()))
 {}
 
 
@@ -150,6 +150,20 @@ Foam::tmp<Foam::vector2DField> Foam::waveModels::Airy::velocity
     const scalar ka = k()*amplitude(t);
 
     return celerity()*ka*vi(1, t, u, xz);
+}
+
+
+Foam::tmp<Foam::scalarField> Foam::waveModels::Airy::pressure
+(
+    const scalar t,
+    const scalar u,
+    const vector2DField& xz
+) const
+{
+    // It is a fluke of the formulation that the time derivative of the velocity
+    // potential equals the x-derivative multiplied by the celerity. This allows
+    // for this shortcut in evaluating the unsteady pressure.
+    return celerity()*velocity(t, u, xz)->component(0);
 }
 
 

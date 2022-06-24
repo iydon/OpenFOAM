@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2017-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -88,7 +88,7 @@ Foam::Roots<3> Foam::cubicEqn::roots() const
     const bool oneReal = disc == 0 && p == 0;
     const bool twoReal = disc == 0 && p != 0;
     const bool threeReal = disc < 0;
-    //const bool oneRealTwoComplex = disc > 0;
+    // const bool oneRealTwoComplex = disc > 0;
 
     static const scalar sqrt3 = sqrt(3.0);
 
@@ -96,7 +96,7 @@ Foam::Roots<3> Foam::cubicEqn::roots() const
 
     if (oneReal)
     {
-        const Roots<1> r = linearEqn(- a, b/3).roots();
+        const Roots<1> r = linearEqn(a, b/3).roots();
         return Roots<3>(r.type(0), r[0]);
     }
     else if (twoReal)

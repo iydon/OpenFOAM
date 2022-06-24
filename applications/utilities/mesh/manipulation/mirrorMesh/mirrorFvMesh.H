@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -79,7 +79,7 @@ public:
     // Constructors
 
         //- Construct from IOobject
-        mirrorFvMesh(const IOobject& io);
+        mirrorFvMesh(const IOobject& io, const word& dictName);
 
 
     //- Destructor
@@ -94,13 +94,13 @@ public:
             return mirrorMeshPtr_();
         }
 
-        //- Mirrorred to original cell
+        //- Mirrored to original cell
         const labelList& cellMap() const
         {
             return cellMapPtr_();
         }
 
-        //- Mirrorred to original point
+        //- Mirrored to original point
         const labelList& pointMap() const
         {
             return pointMapPtr_();

@@ -1,8 +1,8 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -346,7 +346,7 @@ void readFields
             );
 
             //// Write it for next time round (since mesh gets written as well)
-            //fields[i].write();
+            // fields[i].write();
         }
     }
     else
@@ -570,7 +570,7 @@ int main(int argc, char *argv[])
 
     // Create 0 sized mesh to do all the generation of zero sized
     // fields on processors that have zero sized meshes. Note that this is
-    // only nessecary on master but since polyMesh construction with
+    // only necessary on master but since polyMesh construction with
     // Pstream::parRun does parallel comms we have to do it on all
     // processors
     autoPtr<fvMeshSubset> subsetterPtr;
@@ -725,7 +725,7 @@ int main(int argc, char *argv[])
 
     // Debugging: Create additional volField that will be mapped.
     // Used to test correctness of mapping
-    //volVectorField mapCc("mapCc", 1*mesh.C());
+    // volVectorField mapCc("mapCc", 1*mesh.C());
 
     // Global matching tolerance
     const scalar tolDim = getMergeDistance
@@ -738,14 +738,14 @@ int main(int argc, char *argv[])
     // Mesh distribution engine
     fvMeshDistribute distributor(mesh, tolDim);
 
-    //Pout<< "Wanted distribution:"
+    // Pout<< "Wanted distribution:"
     //    << distributor.countCells(finalDecomp) << nl << endl;
 
     // Do actual sending/receiving of mesh
     autoPtr<mapDistributePolyMesh> map = distributor.distribute(finalDecomp);
 
     //// Distribute any non-registered data accordingly
-    //map().distributeFaceData(faceCc);
+    // map().distributeFaceData(faceCc);
 
 
     // Print some statistics
@@ -766,7 +766,7 @@ int main(int argc, char *argv[])
 
 
     // Debugging: test mapped cellcentre field.
-    //compareFields(tolDim, mesh.C(), mapCc);
+    // compareFields(tolDim, mesh.C(), mapCc);
 
     // Print nice message
     // ~~~~~~~~~~~~~~~~~~
