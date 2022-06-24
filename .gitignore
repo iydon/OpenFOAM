@@ -6,8 +6,6 @@
 .*~
 *.bak
 *.bak[0-9][0-9]
-*.orig
-*.orig[0-9][0-9]
 \#*\#
 
 # File-browser settings - anywhere
@@ -52,13 +50,14 @@ doc/Doxygen/DTAGS
 
 # Generated files in the main directory (e.g. ReleaseNotes-?.?.html)
 # and in the doc directory
+/*.html
 /doc/*.html
 
 # Untracked configuration files
 /etc/prefs.csh
 /etc/prefs.sh
-/etc/config/prefs.csh
-/etc/config/prefs.sh
+/etc/config.csh/prefs.csh
+/etc/config.sh/prefs.sh
 
 # Source packages - anywhere
 *.tar.bz2
@@ -82,5 +81,3 @@ doc/Doxygen/DTAGS
 
 # Ignore the test directory
 /tutorialsTest
-
-# end-of-file

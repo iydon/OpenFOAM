@@ -3,7 +3,7 @@
 # =========                 |
 # \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
 #  \\    /   O peration     |
-#   \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+#   \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
 #    \\/     M anipulation  |
 #-------------------------------------------------------------------------------
 # License
@@ -107,7 +107,7 @@ do
     ##DEBUG echo "remove>$wildcard<" 1>&2
     if [ -n "$wildcard" ]
     then
-        dirList=$(echo "$dirList:" | sed -e "s@${wildcard}[^:]*:@@g")
+        dirList=$(echo "$dirList:" | sed -e "s|${wildcard}[^:]*:||g")
     fi
 done
 
@@ -153,4 +153,4 @@ IFS="$oldIFS"
 ##DEBUG echo "output>$dirList<" 1>&2
 echo "$dirList"
 
-# -----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
