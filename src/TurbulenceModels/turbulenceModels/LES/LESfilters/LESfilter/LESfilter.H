@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -66,6 +66,23 @@ class LESfilter
         void operator=(const LESfilter&);
 
 
+protected:
+
+    //- Temporary function to ensure the coupled boundary conditions of the
+    //  field are correct for filtering.
+    //
+    //  Following the rewrite of the turbulence models to use
+    //  GeometricField::InternalField for sources etc. delta() will return a
+    //  GeometricField::InternalField and filters will take a
+    //  tmp<GeometricField::InternalField> argument and handle the coupled BCs
+    //  appropriately
+    template<class GeoFieldType>
+    void correctBoundaryConditions(const tmp<GeoFieldType>& tgf) const
+    {
+        const_cast<GeoFieldType&>(tgf()).correctBoundaryConditions();
+    }
+
+
 public:
 
     //- Runtime type information
@@ -102,7 +119,8 @@ public:
         static autoPtr<LESfilter> New
         (
             const fvMesh&,
-            const dictionary&
+            const dictionary&,
+            const word& filterDictName="filter"
         );
 
 

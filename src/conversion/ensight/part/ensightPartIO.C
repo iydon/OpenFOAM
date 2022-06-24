@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -29,8 +29,6 @@ Description
 #include "ensightPart.H"
 #include "dictionary.H"
 #include "IOstreams.H"
-
-#include <cmath>
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
@@ -61,7 +59,7 @@ void Foam::ensightPart::writeFieldList
     const labelUList& idList
 ) const
 {
-    if (&idList)
+    if (notNull(idList))
     {
         forAll(idList, i)
         {

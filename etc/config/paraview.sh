@@ -2,7 +2,7 @@
 # =========                 |
 # \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
 #  \\    /   O peration     |
-#   \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
+#   \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
 #    \\/     M anipulation  |
 #------------------------------------------------------------------------------
 # License
@@ -38,7 +38,7 @@ cleaned=`$WM_PROJECT_DIR/bin/foamCleanPath "$PATH" "$WM_THIRD_PARTY_DIR/platform
 
 # determine the cmake to be used
 unset CMAKE_HOME
-for cmake in cmake-2.8.12.1 cmake-2.8.8 cmake-2.8.4 cmake-2.8.3 cmake-2.8.1
+for cmake in cmake-3.2.1 cmake-2.8.12.1 cmake-2.8.8 cmake-2.8.4 cmake-2.8.3 cmake-2.8.1
 do
     cmake=$WM_THIRD_PARTY_DIR/platforms/$WM_ARCH$WM_COMPILER/$cmake
     if [ -r $cmake ]
@@ -53,7 +53,9 @@ done
 #- ParaView version, automatically determine major version
 #export ParaView_VERSION=3.12.0
 #export ParaView_VERSION=4.0.1
-export ParaView_VERSION=4.1.0
+#export ParaView_VERSION=4.1.0
+#export ParaView_VERSION=4.3.1
+export ParaView_VERSION=4.4.0
 export ParaView_MAJOR=detect
 
 
@@ -99,15 +101,15 @@ export ParaView_DIR=$WM_THIRD_PARTY_DIR/platforms/$WM_ARCH$WM_COMPILER/$paraview
 if [ -r $ParaView_DIR -o -r $paraviewInstDir ]
 then
     export ParaView_INCLUDE_DIR=$ParaView_DIR/include/paraview-$ParaView_MAJOR
-    if [ ! -d $ParaView_INCLUDE_DIR -a -d $ParaView_DIR/include/paraview ]
+    if [ ! -d $ParaView_INCLUDE_DIR -a -d $ParaView_DIR/include/paraview-3.0 ]
     then
-        export ParaView_INCLUDE_DIR=$ParaView_DIR/include/paraview
+        export ParaView_INCLUDE_DIR=$ParaView_DIR/include/paraview-3.0
     fi
 
     ParaView_LIB_DIR=$ParaView_DIR/lib/paraview-$ParaView_MAJOR
-    if [ ! -d $ParaView_LIB_DIR -a -d $ParaView_DIR/lib/paraview ]
+    if [ ! -d $ParaView_LIB_DIR -a -d $ParaView_DIR/lib/paraview-3.0 ]
     then
-        ParaView_LIB_DIR=$ParaView_DIR/lib/paraview
+        ParaView_LIB_DIR=$ParaView_DIR/lib/paraview-3.0
     fi
 
     export PATH=$ParaView_DIR/bin:$PATH

@@ -2,7 +2,7 @@
 # =========                 |
 # \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
 #  \\    /   O peration     |
-#   \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
+#   \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
 #    \\/     M anipulation  |
 #------------------------------------------------------------------------------
 # License
@@ -32,7 +32,7 @@
 #------------------------------------------------------------------------------
 
 export WM_PROJECT=OpenFOAM
-export WM_PROJECT_VERSION=2.4.x
+export WM_PROJECT_VERSION=3.0.x
 
 ################################################################################
 # USER EDITABLE PART: Changes made here may be lost with the next upgrade
@@ -62,17 +62,23 @@ foamInstall=$HOME/$WM_PROJECT
 foamCompiler=system
 
 #- Compiler:
-#    WM_COMPILER = Gcc | Gcc45 | Gcc46 | Gcc47 | Clang | Icc (Intel icc)
+#    WM_COMPILER = Gcc | Gcc45 | Gcc46 | Gcc47 | Gcc48 | Gcc49| Clang | Icc
 export WM_COMPILER=Gcc
 unset WM_COMPILER_ARCH WM_COMPILER_LIB_ARCH
 
-#- Architecture:
+#- Memory addressing:
+#    On a 64bit OS this can be 32bit or 64bit
+#    On a 32bit OS addressing is 32bit and this option is not used
 #    WM_ARCH_OPTION = 32 | 64
 export WM_ARCH_OPTION=64
 
 #- Precision:
 #    WM_PRECISION_OPTION = DP | SP
 export WM_PRECISION_OPTION=DP
+
+#- Label size:
+#    WM_LABEL_SIZE = 32 | 64
+export WM_LABEL_SIZE=32
 
 #- Optimised, debug, profiling:
 #    WM_COMPILE_OPTION = Opt | Debug | Prof
@@ -214,7 +220,11 @@ _foamSource $WM_PROJECT_DIR/etc/config/aliases.sh
 _foamSource `$WM_PROJECT_DIR/bin/foamEtcFile config/paraview.sh`
 _foamSource `$WM_PROJECT_DIR/bin/foamEtcFile config/ensight.sh`
 _foamSource `$WM_PROJECT_DIR/bin/foamEtcFile config/gperftools.sh`
-_foamSource `$WM_PROJECT_DIR/bin/foamEtcFile config/CGAL.sh`
+
+if [ ! -z "$FOAMY_HEX_MESH" ]
+then
+    _foamSource `$WM_PROJECT_DIR/bin/foamEtcFile config/CGAL.sh`
+fi
 
 
 # Clean environment paths again. Only remove duplicates

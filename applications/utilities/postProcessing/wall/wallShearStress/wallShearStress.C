@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,21 +25,19 @@ Application
     wallShearStress
 
 Description
-    Calculates and reports wall shear stress for all patches, for the
-    specified times when using RAS turbulence models.
+    Calculates and reports the turbulent wall shear stress for all patches,
+    for the specified times.
 
-    Default behaviour assumes operating in incompressible mode.
-    Use the -compressible option for compressible RAS cases.
+    Compressible modes is automatically selected based on the existence of the
+    "thermophysicalProperties" dictionary required to construct the
+    thermodynamics package.
 
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-
+#include "turbulentTransportModel.H"
+#include "turbulentFluidThermoModel.H"
 #include "incompressible/singlePhaseTransportModel/singlePhaseTransportModel.H"
-#include "incompressible/RAS/RASModel/RASModel.H"
-
-#include "fluidThermo.H"
-#include "compressible/RAS/RASModel/RASModel.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -55,9 +53,9 @@ void calcIncompressible
 
     singlePhaseTransportModel laminarTransport(U, phi);
 
-    autoPtr<incompressible::RASModel> model
+    autoPtr<incompressible::turbulenceModel> model
     (
-        incompressible::RASModel::New(U, phi, laminarTransport)
+        incompressible::turbulenceModel::New(U, phi, laminarTransport)
     );
 
     const volSymmTensorField Reff(model->devReff());
@@ -104,15 +102,9 @@ void calcCompressible
     autoPtr<fluidThermo> pThermo(fluidThermo::New(mesh));
     fluidThermo& thermo = pThermo();
 
-    autoPtr<compressible::RASModel> model
+    autoPtr<compressible::turbulenceModel> model
     (
-        compressible::RASModel::New
-        (
-            rho,
-            U,
-            phi,
-            thermo
-        )
+        compressible::turbulenceModel::New(rho, U, phi, thermo)
     );
 
     const volSymmTensorField Reff(model->devRhoReff());
@@ -131,21 +123,11 @@ void calcCompressible
 int main(int argc, char *argv[])
 {
     timeSelector::addOptions();
-
     #include "addRegionOption.H"
-
-    argList::addBoolOption
-    (
-        "compressible",
-        "calculate compressible wall shear stress"
-    );
-
     #include "setRootCase.H"
     #include "createTime.H"
     instantList timeDirs = timeSelector::select0(runTime, args);
     #include "createNamedMesh.H"
-
-    const bool compressible = args.optionFound("compressible");
 
     forAll(timeDirs, timeI)
     {
@@ -186,7 +168,15 @@ int main(int argc, char *argv[])
             Info<< "Reading field U\n" << endl;
             volVectorField U(UHeader, mesh);
 
-            if (compressible)
+            if
+            (
+                IOobject
+                (
+                    basicThermo::dictName,
+                    runTime.constant(),
+                    mesh
+                ).headerOk()
+            )
             {
                 calcCompressible(mesh, runTime, U, wallShearStress);
             }

@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -285,7 +285,7 @@ label findFace(const polyMesh& mesh, const face& f)
         }
     }
 
-    FatalErrorIn("findFace(const polyMesh&, const face&)")
+    FatalErrorInFunction
         << "Cannot find a face matching " << f
         << exit(FatalError);
 
@@ -313,14 +313,14 @@ int main(int argc, char *argv[])
 
     const scalar scaleFactor = args.optionLookupOrDefault("scale", 1.0);
 
-#   include "createTime.H"
+    #include "createTime.H"
 
     fileName ansysFile(args.additionalArgs()[0]);
     ifstream ansysStream(ansysFile.c_str());
 
     if (!ansysStream)
     {
-        FatalErrorIn("ansysToFoam::main(int argc, char *argv[])")
+        FatalErrorInFunction
             << args.executable()
             << ": file " << ansysFile << " not found"
             << exit(FatalError);

@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -246,7 +246,7 @@ void Foam::PairCollision<CloudType>::wallInteraction()
 
                     vector pW = nearPt - pos;
 
-                    scalar normalAlignment = normal & pW/mag(pW);
+                    scalar normalAlignment = normal & pW/(mag(pW) + SMALL);
 
                     // Find the patchIndex and wallData for WallSiteData object
                     label patchI = patchID[realFaceI - mesh.nInternalFaces()];
@@ -597,20 +597,18 @@ Foam::PairCollision<CloudType>::PairCollision
 
 
 template<class CloudType>
-Foam::PairCollision<CloudType>::PairCollision(PairCollision<CloudType>& cm)
+Foam::PairCollision<CloudType>::PairCollision
+(
+    const PairCollision<CloudType>& cm
+)
 :
     CollisionModel<CloudType>(cm),
     pairModel_(NULL),
     wallModel_(NULL),
     il_(cm.owner().mesh())
 {
-    notImplemented
-    (
-        "Foam::PairCollision<CloudType>::PairCollision"
-        "("
-            "PairCollision<CloudType>& cm"
-        ")"
-    );
+    // Need to clone to PairModel and WallModel
+    NotImplemented;
 }
 
 

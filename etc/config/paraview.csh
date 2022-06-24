@@ -2,7 +2,7 @@
 # =========                 |
 # \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
 #  \\    /   O peration     |
-#   \\  /    A nd           | Copyright (C) 2011-2015 OpenFOAM Foundation
+#   \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
 #    \\/     M anipulation  |
 #------------------------------------------------------------------------------
 # License
@@ -39,7 +39,7 @@ if ( $status == 0 ) setenv PATH $cleaned
 
 # determine the cmake to be used
 unsetenv CMAKE_HOME
-foreach cmake ( cmake-2.8.12.1 cmake-2.8.8 cmake-2.8.4 cmake-2.8.3 cmake-2.8.1 )
+foreach cmake ( cmake-3.2.1 cmake-2.8.12.1 cmake-2.8.8 cmake-2.8.4 cmake-2.8.3 cmake-2.8.1 )
     set cmake=$WM_THIRD_PARTY_DIR/platforms/$WM_ARCH$WM_COMPILER/$cmake
     if ( -r $cmake ) then
         setenv CMAKE_HOME $cmake
@@ -51,7 +51,9 @@ end
 #- ParaView version, automatically determine major version:
 #setenv ParaView_VERSION 3.12.0
 #setenv ParaView_VERSION 4.0.1
-setenv ParaView_VERSION 4.1.0
+#setenv ParaView_VERSION 4.1.0
+#setenv ParaView_VERSION 4.3.1
+setenv ParaView_VERSION 4.4.0
 setenv ParaView_MAJOR detect
 
 
@@ -90,13 +92,13 @@ setenv ParaView_DIR $WM_THIRD_PARTY_DIR/platforms/$WM_ARCH$WM_COMPILER/$paraview
 # set paths if binaries or source are present
 if ( -r $ParaView_DIR || -r $paraviewInstDir ) then
     setenv ParaView_INCLUDE_DIR $ParaView_DIR/include/paraview-${ParaView_MAJOR}
-    if (! -r $ParaView_INCLUDE_DIR && -r $ParaView_DIR/include/paraview) then
-        setenv ParaView_INCLUDE_DIR $ParaView_DIR/include/paraview
+    if (! -r $ParaView_INCLUDE_DIR && -r $ParaView_DIR/include/paraview-3.0) then
+        setenv ParaView_INCLUDE_DIR $ParaView_DIR/include/paraview-3.0
     endif
 
     set ParaView_LIB_DIR=${ParaView_DIR}/lib/paraview-${ParaView_MAJOR}
-    if (! -r $ParaView_LIB_DIR && -r ${ParaView_DIR}/lib/paraview) then
-        set ParaView_LIB_DIR=${ParaView_DIR}/lib/paraview
+    if (! -r $ParaView_LIB_DIR && -r ${ParaView_DIR}/lib/paraview-3.0) then
+        set ParaView_LIB_DIR=${ParaView_DIR}/lib/paraview-3.0
     endif
 
     setenv PATH ${ParaView_DIR}/bin:${PATH}

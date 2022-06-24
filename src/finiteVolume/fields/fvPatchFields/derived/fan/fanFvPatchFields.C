@@ -28,7 +28,7 @@ License
 #include "volFields.H"
 #include "surfaceFields.H"
 #include "Tuple2.H"
-#include "polynomial.H"
+#include "PolynomialEntry.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -78,7 +78,7 @@ Foam::fanFvPatchField<Foam::scalar>::fanFvPatchField
 :
     uniformJumpFvPatchField<scalar>(p, iF),
     phiName_(dict.lookupOrDefault<word>("phi", "phi")),
-    rhoName_(dict.lookupOrDefault<word>("rho", "none"))
+    rhoName_(dict.lookupOrDefault<word>("rho", "rho"))
 {
     if (this->cyclicPatch().owner())
     {
@@ -109,7 +109,7 @@ Foam::fanFvPatchField<Foam::scalar>::fanFvPatchField
 
             this->jumpTable_.reset
             (
-                new polynomial("jumpTable", coeffs)
+                new PolynomialEntry<scalar>("jumpTable", coeffs)
             );
         }
         else
