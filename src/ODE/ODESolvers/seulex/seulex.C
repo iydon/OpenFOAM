@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -153,7 +153,7 @@ bool Foam::seulex::seul
 
             LUBacksubstitute(a_, pivotIndices_, dy_);
 
-            const scalar denom = min(1, dy1 + SMALL);
+            const scalar denom = max(1, dy1);
             scalar dy2 = 0;
             for (label i=0; i<n_; i++)
             {
@@ -207,6 +207,31 @@ void Foam::seulex::extrapolate
     for (int i=0; i<n_; i++)
     {
         y[i] = table(0, i) + coeff_(k, 0)*(table(0, i) - y[i]);
+    }
+}
+
+
+bool Foam::seulex::resize()
+{
+    if (ODESolver::resize())
+    {
+        table_.shallowResize(kMaxx_, n_);
+        resizeField(dfdx_);
+        resizeMatrix(dfdy_);
+        resizeMatrix(a_);
+        resizeField(pivotIndices_);
+        resizeField(y0_);
+        resizeField(ySequence_);
+        resizeField(scale_);
+        resizeField(dy_);
+        resizeField(yTemp_);
+        resizeField(dydx_);
+
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 

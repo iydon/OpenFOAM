@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -45,16 +45,6 @@ template<class Form, class Cmpt, direction Ncmpts>
 inline VectorSpace<Form, Cmpt, Ncmpts>::VectorSpace(const Foam::zero)
 {
     VectorSpaceOps<Ncmpts,0>::eqOpS(*this, Zero, eqOp<Cmpt>());
-}
-
-
-template<class Form, class Cmpt, direction Ncmpts>
-inline VectorSpace<Form, Cmpt, Ncmpts>::VectorSpace
-(
-    const VectorSpace<Form, Cmpt, Ncmpts>& vs
-)
-{
-    VectorSpaceOps<Ncmpts,0>::eqOp(*this, vs, eqOp<Cmpt>());
 }
 
 
@@ -286,16 +276,6 @@ ConstBlock<SubVector, BStart>::operator()
 
 
 template<class Form, class Cmpt, direction Ncmpts>
-inline void VectorSpace<Form, Cmpt, Ncmpts>::operator=
-(
-    const VectorSpace<Form, Cmpt, Ncmpts>& vs
-)
-{
-    VectorSpaceOps<Ncmpts,0>::eqOp(*this, vs, eqOp<Cmpt>());
-}
-
-
-template<class Form, class Cmpt, direction Ncmpts>
 inline void VectorSpace<Form, Cmpt, Ncmpts>::operator+=
 (
     const VectorSpace<Form, Cmpt, Ncmpts>& vs
@@ -429,6 +409,17 @@ inline scalar mag
 
 
 template<class Form, class Cmpt, direction Ncmpts>
+inline VectorSpace<Form, Cmpt, Ncmpts> normalised
+(
+    const VectorSpace<Form, Cmpt, Ncmpts>& vs
+)
+{
+    const scalar magVs = mag(vs);
+    return magVs > 0 ? vs/magVs : Zero;
+}
+
+
+template<class Form, class Cmpt, direction Ncmpts>
 inline VectorSpace<Form, Cmpt, Ncmpts> cmptMultiply
 (
     const VectorSpace<Form, Cmpt, Ncmpts>& vs1,
@@ -534,6 +525,18 @@ inline Cmpt cmptProduct
     Cmpt product = vs.v_[0];
     VectorSpaceOps<Ncmpts,1>::SeqOp(product, vs, multiplyEqOp<Cmpt>());
     return product;
+}
+
+
+template<class Form, class Cmpt, direction Ncmpts>
+inline Form cmptSqr
+(
+    const VectorSpace<Form, Cmpt, Ncmpts>& vs
+)
+{
+    Form v;
+    VectorSpaceOps<Ncmpts,0>::eqOp(v, vs, eqSqrOp<Cmpt>());
+    return v;
 }
 
 

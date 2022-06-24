@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,7 +25,7 @@ License
 
 #include "GAMGSolver.H"
 #include "PCG.H"
-#include "PBiCG.H"
+#include "PBiCGStab.H"
 #include "SubField.H"
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
@@ -533,13 +533,13 @@ Foam::dictionary Foam::GAMGSolver::PCGsolverDict
 }
 
 
-Foam::dictionary Foam::GAMGSolver::PBiCGsolverDict
+Foam::dictionary Foam::GAMGSolver::PBiCGStabSolverDict
 (
     const scalar tol,
     const scalar relTol
 ) const
 {
-    dictionary dict(IStringStream("solver PBiCG; preconditioner DILU;")());
+    dictionary dict(IStringStream("solver PBiCGStab; preconditioner DILU;")());
     dict.add("tolerance", tol);
     dict.add("relTol", relTol);
 
@@ -556,8 +556,6 @@ void Foam::GAMGSolver::solveCoarsestLevel
     const label coarsestLevel = matrixLevels_.size() - 1;
 
     label coarseComm = matrixLevels_[coarsestLevel].mesh().comm();
-    label oldWarn = UPstream::warnComm;
-    UPstream::warnComm = coarseComm;
 
     if (directSolveCoarsest_)
     {
@@ -595,9 +593,6 @@ void Foam::GAMGSolver::solveCoarsestLevel
     //    //solverPerformance coarseSolverPerf;
     //
     //    label solveComm = agglomeration_.procCommunicator(coarsestLevel);
-    //    label oldWarn = UPstream::warnComm;
-    //    UPstream::warnComm = solveComm;
-    //
     //
     //    coarsestCorrField = 0;
     //    solverPerformance coarseSolverPerf;
@@ -612,14 +607,14 @@ void Foam::GAMGSolver::solveCoarsestLevel
     //
     //            if (allMatrix.asymmetric())
     //            {
-    //                coarseSolverPerf = PBiCG
+    //                coarseSolverPerf = PBiCGStab
     //                (
     //                    "coarsestLevelCorr",
     //                    allMatrix,
     //                    procInterfaceLevelsBouCoeffs_[coarsestLevel],
     //                    procInterfaceLevelsIntCoeffs_[coarsestLevel],
     //                    procInterfaceLevels_[coarsestLevel],
-    //                    PBiCGsolverDict(tolerance_, relTol_)
+    //                    PBiCGStabSolverDict(tolerance_, relTol_)
     //                ).solve
     //                (
     //                    coarsestCorrField,
@@ -645,7 +640,6 @@ void Foam::GAMGSolver::solveCoarsestLevel
     //        }
     //    }
     //
-    //    UPstream::warnComm = oldWarn;
     //    Pout<< "done master solve." << endl;
     //
     //    //// Scatter to all processors
@@ -673,14 +667,14 @@ void Foam::GAMGSolver::solveCoarsestLevel
 
         if (matrixLevels_[coarsestLevel].asymmetric())
         {
-            coarseSolverPerf = PBiCG
+            coarseSolverPerf = PBiCGStab
             (
                 "coarsestLevelCorr",
                 matrixLevels_[coarsestLevel],
                 interfaceLevelsBouCoeffs_[coarsestLevel],
                 interfaceLevelsIntCoeffs_[coarsestLevel],
                 interfaceLevels_[coarsestLevel],
-                PBiCGsolverDict(tolerance_, relTol_)
+                PBiCGStabSolverDict(tolerance_, relTol_)
             ).solve
             (
                 coarsestCorrField,
@@ -709,8 +703,6 @@ void Foam::GAMGSolver::solveCoarsestLevel
             coarseSolverPerf.print(Info.masterStream(coarseComm));
         }
     }
-
-    UPstream::warnComm = oldWarn;
 }
 
 

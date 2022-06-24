@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2013-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -87,7 +87,7 @@ Usage
     \table
         Property     | Description             | Required    | Default value
         commsDir     | communications directory   | yes         |
-        fileName     | transfer file name      | yes         |
+        file         | transfer file name      | yes         |
         waitInterval | interval [s] between file checks | no | 1
         timeOut      | time after which error invoked [s] |no |100*waitInterval
         calcFrequency | calculation frequency  | no          | 1
@@ -100,7 +100,7 @@ Usage
         {
             type            externalCoupledTemperature;
             commsDir        "$FOAM_CASE/comms";
-            fileName        data;
+            file            data;
             calcFrequency   1;
         }
     \endverbatim
@@ -221,17 +221,14 @@ public:
 
     // Member functions
 
-        // Evaluation functions
+        //- Evaluate the patch field
+        virtual void evaluate
+        (
+            const Pstream::commsTypes commsType=Pstream::commsTypes::blocking
+        );
 
-            //- Evaluate the patch field
-            virtual void evaluate
-            (
-                const Pstream::commsTypes commsType=Pstream::blocking
-            );
-
-            //- Transfer data for external source
-            virtual void transferData(OFstream& os) const;
-
+        //- Transfer data for external source
+        virtual void transferData(OFstream& os) const;
 
         //- Write
         virtual void write(Ostream&) const;

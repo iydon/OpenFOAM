@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -276,7 +276,7 @@ EulerDdtScheme<Type>::fvcDdt
             new GeometricField<Type, fvPatchField, volMesh>
             (
                 ddtIOobject,
-                rDeltaT.value()*
+                rDeltaT*
                 (
                     alpha()
                    *rho()
@@ -314,6 +314,33 @@ EulerDdtScheme<Type>::fvcDdt
             )
         );
     }
+}
+
+
+template<class Type>
+tmp<GeometricField<Type, fvsPatchField, surfaceMesh>>
+EulerDdtScheme<Type>::fvcDdt
+(
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& sf
+)
+{
+    dimensionedScalar rDeltaT = 1.0/mesh().time().deltaT();
+
+    IOobject ddtIOobject
+    (
+        "ddt("+sf.name()+')',
+        mesh().time().timeName(),
+        mesh()
+    );
+
+    return tmp<GeometricField<Type, fvsPatchField, surfaceMesh>>
+    (
+        new GeometricField<Type, fvsPatchField, surfaceMesh>
+        (
+            ddtIOobject,
+            rDeltaT*(sf - sf.oldTime())
+        )
+    );
 }
 
 

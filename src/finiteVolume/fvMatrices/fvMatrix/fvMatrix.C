@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2017 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -30,7 +30,7 @@ License
 #include "coupledFvPatchFields.H"
 #include "UIndirectList.H"
 
-// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
+// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
 template<class Type>
 template<class Type2>
@@ -276,7 +276,7 @@ Foam::fvMatrix<Type>::fvMatrix
     source_(psi.size(), Zero),
     internalCoeffs_(psi.mesh().boundary().size()),
     boundaryCoeffs_(psi.mesh().boundary().size()),
-    faceFluxCorrectionPtr_(NULL)
+    faceFluxCorrectionPtr_(nullptr)
 {
     if (debug)
     {
@@ -328,7 +328,7 @@ Foam::fvMatrix<Type>::fvMatrix(const fvMatrix<Type>& fvm)
     source_(fvm.source_),
     internalCoeffs_(fvm.internalCoeffs_),
     boundaryCoeffs_(fvm.boundaryCoeffs_),
-    faceFluxCorrectionPtr_(NULL)
+    faceFluxCorrectionPtr_(nullptr)
 {
     if (debug)
     {
@@ -373,7 +373,7 @@ Foam::fvMatrix<Type>::fvMatrix(const tmp<fvMatrix<Type>>& tfvm)
         const_cast<fvMatrix<Type>&>(tfvm()).boundaryCoeffs_,
         tfvm.isTmp()
     ),
-    faceFluxCorrectionPtr_(NULL)
+    faceFluxCorrectionPtr_(nullptr)
 {
     if (debug)
     {
@@ -386,7 +386,7 @@ Foam::fvMatrix<Type>::fvMatrix(const tmp<fvMatrix<Type>>& tfvm)
         if (tfvm.isTmp())
         {
             faceFluxCorrectionPtr_ = tfvm().faceFluxCorrectionPtr_;
-            tfvm().faceFluxCorrectionPtr_ = NULL;
+            tfvm().faceFluxCorrectionPtr_ = nullptr;
         }
         else
         {
@@ -416,7 +416,7 @@ Foam::fvMatrix<Type>::fvMatrix
     source_(is),
     internalCoeffs_(psi.mesh().boundary().size()),
     boundaryCoeffs_(psi.mesh().boundary().size()),
-    faceFluxCorrectionPtr_(NULL)
+    faceFluxCorrectionPtr_(nullptr)
 {
     if (debug)
     {
@@ -450,6 +450,18 @@ Foam::fvMatrix<Type>::fvMatrix
 
 }
 
+
+template<class Type>
+Foam::tmp<Foam::fvMatrix<Type>> Foam::fvMatrix<Type>::clone() const
+{
+    return tmp<fvMatrix<Type>>
+    (
+        new fvMatrix<Type>(*this)
+    );
+}
+
+
+// * * * * * * * * * * * * * * * Destructor * * * * * * * * * * * * * * * * * //
 
 template<class Type>
 Foam::fvMatrix<Type>::~fvMatrix()
@@ -1177,7 +1189,7 @@ void Foam::fvMatrix<Type>::operator-=
 template<class Type>
 void Foam::fvMatrix<Type>::operator*=
 (
-    const DimensionedField<scalar, volMesh>& dsf
+    const volScalarField::Internal& dsf
 )
 {
     dimensions_ *= dsf.dimensions();
@@ -1207,7 +1219,7 @@ void Foam::fvMatrix<Type>::operator*=
 template<class Type>
 void Foam::fvMatrix<Type>::operator*=
 (
-    const tmp<DimensionedField<scalar, volMesh>>& tdsf
+    const tmp<volScalarField::Internal>& tdsf
 )
 {
     operator*=(tdsf());
@@ -1372,14 +1384,9 @@ Foam::tmp<Foam::fvMatrix<Type>> Foam::correction
 {
     tmp<Foam::fvMatrix<Type>> tAcorr = A - (A & A.psi());
 
-    if
-    (
-        (A.hasUpper() || A.hasLower())
-     && A.psi().mesh().fluxRequired(A.psi().name())
-    )
-    {
-        tAcorr().faceFluxCorrectionPtr() = (-A.flux()).ptr();
-    }
+    // Delete the faceFluxCorrection from the correction matrix
+    // as it does not have a clear meaning or purpose
+    deleteDemandDrivenData(tAcorr.ref().faceFluxCorrectionPtr());
 
     return tAcorr;
 }
@@ -1393,17 +1400,9 @@ Foam::tmp<Foam::fvMatrix<Type>> Foam::correction
 {
     tmp<Foam::fvMatrix<Type>> tAcorr = tA - (tA() & tA().psi());
 
-    // Note the matrix coefficients are still that of matrix A
-    const fvMatrix<Type>& A = tAcorr();
-
-    if
-    (
-        (A.hasUpper() || A.hasLower())
-     && A.psi().mesh().fluxRequired(A.psi().name())
-    )
-    {
-        tAcorr.ref().faceFluxCorrectionPtr() = (-A.flux()).ptr();
-    }
+    // Delete the faceFluxCorrection from the correction matrix
+    // as it does not have a clear meaning or purpose
+    deleteDemandDrivenData(tAcorr.ref().faceFluxCorrectionPtr());
 
     return tAcorr;
 }
@@ -2160,7 +2159,7 @@ Foam::tmp<Foam::fvMatrix<Type>> Foam::operator-
 template<class Type>
 Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 (
-    const DimensionedField<scalar, volMesh>& dsf,
+    const volScalarField::Internal& dsf,
     const fvMatrix<Type>& A
 )
 {
@@ -2172,7 +2171,7 @@ Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 template<class Type>
 Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 (
-    const tmp<DimensionedField<scalar, volMesh>>& tdsf,
+    const tmp<volScalarField::Internal>& tdsf,
     const fvMatrix<Type>& A
 )
 {
@@ -2196,7 +2195,7 @@ Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 template<class Type>
 Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 (
-    const DimensionedField<scalar, volMesh>& dsf,
+    const volScalarField::Internal& dsf,
     const tmp<fvMatrix<Type>>& tA
 )
 {
@@ -2208,7 +2207,7 @@ Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 template<class Type>
 Foam::tmp<Foam::fvMatrix<Type>> Foam::operator*
 (
-    const tmp<DimensionedField<scalar, volMesh>>& tdsf,
+    const tmp<volScalarField::Internal>& tdsf,
     const tmp<fvMatrix<Type>>& tA
 )
 {

@@ -148,19 +148,14 @@ public:
 
     // Member functions
 
-        // Evaluation functions
+        //- Evaluate the patchField
+        virtual void evaluate
+        (
+            const Pstream::commsTypes commsType = Pstream::commsTypes::blocking
+        );
 
-            //- Evaluate the patchField
-            virtual void evaluate
-            (
-                const Pstream::commsTypes commsType=Pstream::blocking
-            );
-
-
-        // I-O
-
-            //- Write
-            virtual void write(Ostream&) const;
+        //- Write
+        virtual void write(Ostream&) const;
 };
 
 
