@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2017-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2017-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -170,7 +170,7 @@ Foam::fileOperations::uncollatedFileOperation::uncollatedFileOperation
 {
     if (verbose)
     {
-        Info<< "I/O    : " << typeName << endl;
+        InfoHeader << "I/O    : " << typeName << endl;
     }
 }
 
@@ -206,31 +206,33 @@ bool Foam::fileOperations::uncollatedFileOperation::chMod
 mode_t Foam::fileOperations::uncollatedFileOperation::mode
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::mode(fName, followLink);
+    return Foam::mode(fName, checkVariants, followLink);
 }
 
 
-Foam::fileName::Type Foam::fileOperations::uncollatedFileOperation::type
+Foam::fileType Foam::fileOperations::uncollatedFileOperation::type
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::type(fName, followLink);
+    return Foam::type(fName, checkVariants, followLink);
 }
 
 
 bool Foam::fileOperations::uncollatedFileOperation::exists
 (
     const fileName& fName,
-    const bool checkGzip,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::exists(fName, checkGzip, followLink);
+    return Foam::exists(fName, checkVariants, followLink);
 }
 
 
@@ -247,41 +249,44 @@ bool Foam::fileOperations::uncollatedFileOperation::isDir
 bool Foam::fileOperations::uncollatedFileOperation::isFile
 (
     const fileName& fName,
-    const bool checkGzip,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::isFile(fName, checkGzip, followLink);
+    return Foam::isFile(fName, checkVariants, followLink);
 }
 
 
 off_t Foam::fileOperations::uncollatedFileOperation::fileSize
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::fileSize(fName, followLink);
+    return Foam::fileSize(fName, checkVariants, followLink);
 }
 
 
 time_t Foam::fileOperations::uncollatedFileOperation::lastModified
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::lastModified(fName, followLink);
+    return Foam::lastModified(fName, checkVariants, followLink);
 }
 
 
 double Foam::fileOperations::uncollatedFileOperation::highResLastModified
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return Foam::highResLastModified(fName, followLink);
+    return Foam::highResLastModified(fName, checkVariants, followLink);
 }
 
 
@@ -316,7 +321,7 @@ bool Foam::fileOperations::uncollatedFileOperation::rmDir
 Foam::fileNameList Foam::fileOperations::uncollatedFileOperation::readDir
 (
     const fileName& dir,
-    const fileName::Type type,
+    const fileType type,
     const bool filtergz,
     const bool followLink
 ) const
@@ -466,6 +471,12 @@ bool Foam::fileOperations::uncollatedFileOperation::readHeader
     const word& typeName
 ) const
 {
+    if (debug)
+    {
+        Pout<< "uncollatedFileOperation::readHeader :"
+            << " fName:" << fName
+            << " typeName:" << typeName << endl;
+    }
     if (fName.empty())
     {
         if (IOobject::debug)
@@ -493,6 +504,14 @@ bool Foam::fileOperations::uncollatedFileOperation::readHeader
         ok = decomposedBlockData::readMasterHeader(io, isPtr());
     }
 
+    if (debug)
+    {
+        Pout<< "uncollatedFileOperation::readHeader :"
+            << " for fName:" << fName
+            << " ok:" << ok
+            << " headerClassName:" << io.headerClassName() << endl;
+    }
+
     return ok;
 }
 
@@ -503,12 +522,12 @@ Foam::fileOperations::uncollatedFileOperation::readStream
     regIOobject& io,
     const fileName& fName,
     const word& typeName,
-    const bool valid
+    const bool read
 ) const
 {
     autoPtr<ISstream> isPtr;
 
-    if (!valid)
+    if (!read)
     {
         isPtr = autoPtr<ISstream>(new dummyISstream());
         return isPtr;
@@ -557,6 +576,7 @@ Foam::fileOperations::uncollatedFileOperation::readStream
             FatalIOErrorInFunction(isPtr())
                 << "could not detect processor number"
                 << " from objectPath:" << io.objectPath()
+                << " fName:" << fName
                 << exit(FatalIOError);
         }
 
@@ -604,21 +624,16 @@ bool Foam::fileOperations::uncollatedFileOperation::read
                 << " from file " << endl;
         }
 
-        // Set flag for e.g. codeStream
-        const bool oldGlobal = io.globalObject();
-        io.globalObject() = masterOnly;
-        // If codeStream originates from dictionary which is
-        // not IOdictionary we have a problem so use global
-        const bool oldFlag = regIOobject::masterOnlyReading;
-        regIOobject::masterOnlyReading = masterOnly;
-
         // Read file
         ok = io.readData(io.readStream(typeName));
         io.close();
 
-        // Restore flags
-        io.globalObject() = oldGlobal;
-        regIOobject::masterOnlyReading = oldFlag;
+        if (debug)
+        {
+            Pout<< "uncollatedFileOperation::read :"
+                << " Done reading object " << io.objectPath()
+                << " from file " << endl;
+        }
     }
 
     if (masterOnly && Pstream::parRun())
@@ -637,7 +652,7 @@ bool Foam::fileOperations::uncollatedFileOperation::read
         );
         const Pstream::commsStruct& myComm = comms[Pstream::myProcNo()];
 
-        // Reveive from up
+        // Receive from up
         if (myComm.above() != -1)
         {
             IPstream fromAbove
@@ -689,7 +704,7 @@ Foam::fileOperations::uncollatedFileOperation::NewOFstream
     IOstream::streamFormat fmt,
     IOstream::versionNumber ver,
     IOstream::compressionType cmp,
-    const bool valid
+    const bool write
 ) const
 {
     return autoPtr<Ostream>(new OFstream(pathName, fmt, ver, cmp));

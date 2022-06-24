@@ -10,12 +10,11 @@ PtrList<surfaceScalarField> ghfFluid(fluidRegions.size());
 PtrList<compressible::turbulenceModel> turbulenceFluid(fluidRegions.size());
 PtrList<CombustionModel<rhoReactionThermo>> reactionFluid(fluidRegions.size());
 PtrList<volScalarField> p_rghFluid(fluidRegions.size());
-PtrList<radiation::radiationModel> radiation(fluidRegions.size());
+PtrList<radiationModel> radiation(fluidRegions.size());
 PtrList<volScalarField> KFluid(fluidRegions.size());
 PtrList<volScalarField> dpdtFluid(fluidRegions.size());
 PtrList<multivariateSurfaceInterpolationScheme<scalar>::fieldTable>
     fieldsFluid(fluidRegions.size());
-PtrList<volScalarField> QdotFluid(fluidRegions.size());
 
 List<scalar> initialMassFluid(fluidRegions.size());
 
@@ -117,7 +116,7 @@ forAll(fluidRegions, i)
                 IOobject::READ_IF_PRESENT,
                 IOobject::NO_WRITE
             ),
-            dimensionedScalar("hRef", dimLength, 0)
+            dimensionedScalar(dimLength, 0)
         )
     );
 
@@ -195,7 +194,7 @@ forAll(fluidRegions, i)
     radiation.set
     (
         i,
-        radiation::radiationModel::New(thermoFluid[i].T())
+        radiationModel::New(thermoFluid[i].T())
     );
 
     initialMassFluid[i] = fvc::domainIntegrate(rhoFluid[i]).value();
@@ -226,7 +225,6 @@ forAll(fluidRegions, i)
             fluidRegions[i],
             dimensionedScalar
             (
-                "dpdt",
                 thermoFluid[i].p().dimensions()/dimTime,
                 0
             )
@@ -244,25 +242,6 @@ forAll(fluidRegions, i)
         fieldsFluid[i].add(thermoFluid[i].composition().Y()[j]);
     }
     fieldsFluid[i].add(thermoFluid[i].he());
-
-    Info<< "    Adding to QdotFluid\n" << endl;
-    QdotFluid.set
-    (
-        i,
-        new volScalarField
-        (
-            IOobject
-            (
-                "Qdot",
-                runTime.timeName(),
-                fluidRegions[i],
-                IOobject::READ_IF_PRESENT,
-                IOobject::AUTO_WRITE
-            ),
-            fluidRegions[i],
-            dimensionedScalar("Qdot", dimEnergy/dimVolume/dimTime, 0.0)
-        )
-    );
 
     Info<< "    Adding MRF\n" << endl;
     MRFfluid.set

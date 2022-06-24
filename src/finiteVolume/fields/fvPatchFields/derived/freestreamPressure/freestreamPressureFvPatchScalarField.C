@@ -133,7 +133,7 @@ void Foam::freestreamPressureFvPatchScalarField::updateCoeffs()
 
     const Field<scalar> magUp(mag(Up));
 
-    const Field<vector>& nf = patch().nf();
+    const Field<vector> nf(patch().nf());
 
     Field<scalar>& vf = valueFraction();
 
@@ -174,9 +174,9 @@ void Foam::freestreamPressureFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchScalarField::write(os);
     writeEntryIfDifferent<word>(os, "U", "U", UName_);
-    freestreamValue().writeEntry("freestreamValue", os);
-    os.writeKeyword("supersonic") << supersonic_ << token::END_STATEMENT << nl;
-    writeEntry("value", os);
+    writeEntry(os, "freestreamValue", freestreamValue());
+    writeEntry(os, "supersonic", supersonic_);
+    writeEntry(os, "value", *this);
 }
 
 

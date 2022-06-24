@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  6
+    \\  /    A nd           | Version:  7
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -16,9 +16,9 @@ FoamFile
 
 radiationModel  opaqueSolid;
 
-absorptionEmissionModel constantAbsorptionEmission;
+absorptionEmissionModel constant;
 
-constantAbsorptionEmissionCoeffs
+constantCoeffs
 {
     absorptivity    absorptivity [ 0 -1 0 0 0 0 0 ] 0.0;
     emissivity      emissivity [ 0 -1 0 0 0 0 0 ] 0.1;

@@ -144,7 +144,7 @@ void Foam::singleRegionCorrectorConvergenceControl::printCorrResidualControls
             << corrResidualControl_[i].relTol << nl;
     }
 
-    Info<< control_.algorithmSpace() << "  Calclations will do " << n
+    Info<< control_.algorithmSpace() << "  Calculations will do " << n
         << " corrections" << (corrResidualControl_.empty() ? "" :
            " if the convergence criteria are not met") << nl << endl;
 }
@@ -173,10 +173,11 @@ corrCriteriaSatisfied() const
         Info<< control_.algorithmName() << ": Correction residuals" << endl;
     }
 
-    const dictionary& solverDict = mesh_.solverPerformanceDict();
-    forAllConstIter(dictionary, solverDict, iter)
+    DynamicList<word> fieldNames(convergenceControl::getFieldNames(mesh_));
+
+    forAll(fieldNames, i)
     {
-        const word& fieldName = iter().keyword();
+        const word& fieldName = fieldNames[i];
         const label fieldi =
             convergenceControl::residualControlIndex
             (
@@ -191,7 +192,6 @@ corrCriteriaSatisfied() const
                 mesh_,
                 fieldName,
                 solveIndex_.found(fieldName) ? solveIndex_[fieldName] : 0,
-                iter().stream(),
                 firstResidual,
                 residual
             );
@@ -230,15 +230,16 @@ void Foam::singleRegionCorrectorConvergenceControl::resetCorrSolveIndex()
 
 void Foam::singleRegionCorrectorConvergenceControl::updateCorrSolveIndex()
 {
-    const dictionary& solverDict = mesh_.solverPerformanceDict();
-    forAllConstIter(dictionary, solverDict, iter)
+    DynamicList<word> fieldNames(convergenceControl::getFieldNames(mesh_));
+
+    forAll(fieldNames, i)
     {
-        const word& fieldName = iter().keyword();
+        const word& fieldName = fieldNames[i];
+
         getNSolves
         (
             mesh_,
             fieldName,
-            iter().stream(),
             solveIndex_(fieldName)
         );
     }

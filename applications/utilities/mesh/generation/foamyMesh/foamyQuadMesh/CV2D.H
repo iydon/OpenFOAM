@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2013-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2013-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -149,7 +149,7 @@ class CV2D
     //- Use the Foam::point in preference to the CGAL point
     typedef Foam::point point;
 
-    // Private data
+    // Private Data
 
         //- The time registry of the application
         const Time& runTime_;
@@ -185,7 +185,7 @@ class CV2D
         //- Keep track of the boundary conform point-pairs
         //  stored after the insertion of the surface point-pairs in case
         //  the boundary conform function is called more than once without
-        //  removing and insertin the surface point-pairs
+        //  removing and inserting the surface point-pairs
         label startOfBoundaryConformPointPairs_;
 
         //- Store the feature points
@@ -198,13 +198,6 @@ class CV2D
 
 
     // Private Member Functions
-
-        //- Disallow default bitwise copy construct
-        CV2D(const CV2D&);
-
-        //- Disallow default bitwise assignment
-        void operator=(const CV2D&);
-
 
         //- Insert point and return it's index
         inline label insertPoint
@@ -311,7 +304,7 @@ class CV2D
 
         void markNearBoundaryPoints();
 
-        //- Restore the Delaunay contraint
+        //- Restore the Delaunay constraint
         void fast_restore_Delaunay(Vertex_handle vh);
 
         // Flip operations used by fast_restore_Delaunay
@@ -332,6 +325,9 @@ public:
 
         //- Construct for given surface
         CV2D(const Time& runTime, const dictionary& controlDict);
+
+        //- Disallow default bitwise copy construction
+        CV2D(const CV2D&) = delete;
 
 
     //- Destructor
@@ -451,6 +447,12 @@ public:
             void writePatch(const fileName& fName) const;
 
             void write() const;
+
+
+    // Member Operators
+
+        //- Disallow default bitwise assignment
+        void operator=(const CV2D&) = delete;
 };
 
 

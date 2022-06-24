@@ -88,7 +88,7 @@ Foam::multiphaseMixtureThermo::multiphaseMixtureThermo
             IOobject::NO_WRITE
         ),
         mesh_,
-        dimensionedScalar("rhoPhi", dimMass/dimTime, 0.0)
+        dimensionedScalar(dimMass/dimTime, 0)
     ),
 
     alphas_
@@ -102,7 +102,7 @@ Foam::multiphaseMixtureThermo::multiphaseMixtureThermo
             IOobject::AUTO_WRITE
         ),
         mesh_,
-        dimensionedScalar("alphas", dimless, 0.0)
+        dimensionedScalar(dimless, 0)
     ),
 
     sigmas_(lookup("sigmas")),
@@ -551,6 +551,28 @@ Foam::tmp<Foam::volScalarField> Foam::multiphaseMixtureThermo::W() const
 }
 
 
+Foam::tmp<Foam::scalarField> Foam::multiphaseMixtureThermo::W
+(
+    const label patchi
+) const
+{
+    PtrDictionary<phaseModel>::const_iterator phasei = phases_.begin();
+
+    tmp<scalarField> tW
+    (
+        phasei().boundaryField()[patchi]*phasei().thermo().W(patchi)
+    );
+
+    for (++phasei; phasei != phases_.end(); ++phasei)
+    {
+        tW.ref() +=
+            phasei().boundaryField()[patchi]*phasei().thermo().W(patchi);
+    }
+
+    return tW;
+}
+
+
 Foam::tmp<Foam::volScalarField> Foam::multiphaseMixtureThermo::nu() const
 {
     return mu()/rho();
@@ -748,21 +770,11 @@ Foam::multiphaseMixtureThermo::surfaceTensionForce() const
 {
     tmp<surfaceScalarField> tstf
     (
-        new surfaceScalarField
+        surfaceScalarField::New
         (
-            IOobject
-            (
-                "surfaceTensionForce",
-                mesh_.time().timeName(),
-                mesh_
-            ),
+            "surfaceTensionForce",
             mesh_,
-            dimensionedScalar
-            (
-                "surfaceTensionForce",
-                dimensionSet(1, -2, -2, 0, 0),
-                0.0
-            )
+            dimensionedScalar(dimensionSet(1, -2, -2, 0, 0), 0)
         )
     );
 
@@ -790,7 +802,7 @@ Foam::multiphaseMixtureThermo::surfaceTensionForce() const
                     << exit(FatalError);
             }
 
-            stf += dimensionedScalar("sigma", dimSigma_, sigma())
+            stf += dimensionedScalar(dimSigma_, sigma())
                *fvc::interpolate(K(alpha1, alpha2))*
                 (
                     fvc::interpolate(alpha2)*fvc::snGrad(alpha1)
@@ -1004,16 +1016,11 @@ Foam::multiphaseMixtureThermo::nearInterface() const
 {
     tmp<volScalarField> tnearInt
     (
-        new volScalarField
+        volScalarField::New
         (
-            IOobject
-            (
-                "nearInterface",
-                mesh_.time().timeName(),
-                mesh_
-            ),
+            "nearInterface",
             mesh_,
-            dimensionedScalar("nearInterface", dimless, 0.0)
+            dimensionedScalar(dimless, 0)
         )
     );
 
@@ -1100,7 +1107,7 @@ void Foam::multiphaseMixtureThermo::solveAlphas
 
     MULES::limitSum(alphaPhiCorrs);
 
-    rhoPhi_ = dimensionedScalar("0", dimensionSet(1, 0, -1, 0, 0), 0);
+    rhoPhi_ = dimensionedScalar(dimensionSet(1, 0, -1, 0, 0), 0);
 
     volScalarField sumAlpha
     (
@@ -1111,7 +1118,7 @@ void Foam::multiphaseMixtureThermo::solveAlphas
             mesh_
         ),
         mesh_,
-        dimensionedScalar("sumAlpha", dimless, 0)
+        dimensionedScalar(dimless, 0)
     );
 
 
@@ -1136,7 +1143,7 @@ void Foam::multiphaseMixtureThermo::solveAlphas
                 mesh_
             ),
             mesh_,
-            dimensionedScalar("Sp", alpha.dgdt().dimensions(), 0.0)
+            dimensionedScalar(alpha.dgdt().dimensions(), 0)
         );
 
         volScalarField::Internal Su

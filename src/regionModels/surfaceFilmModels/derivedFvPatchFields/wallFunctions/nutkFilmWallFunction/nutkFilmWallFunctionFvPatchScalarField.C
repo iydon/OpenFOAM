@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -123,7 +123,7 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcUTau
 }
 
 
-tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcNut() const
+tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::nut() const
 {
     const label patchi = patch().index();
 
@@ -241,9 +241,9 @@ void nutkFilmWallFunctionFvPatchScalarField::write(Ostream& os) const
 {
     fvPatchField<scalar>::write(os);
     writeLocalEntries(os);
-    os.writeKeyword("B") << B_ << token::END_STATEMENT << nl;
-    os.writeKeyword("yPlusCrit") << yPlusCrit_ << token::END_STATEMENT << nl;
-    writeEntry("value", os);
+    writeEntry(os, "B", B_);
+    writeEntry(os, "yPlusCrit", yPlusCrit_);
+    writeEntry(os, "value", *this);
 }
 
 

@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2017-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2017-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -36,6 +36,7 @@ License
 #include "SubList.H"
 #include "unthreadedInitialise.H"
 #include "PackedBoolList.H"
+#include "gzstream.h"
 
 /* * * * * * * * * * * * * * * Static Member Data  * * * * * * * * * * * * * */
 
@@ -122,7 +123,7 @@ Foam::labelList Foam::fileOperations::masterUncollatedFileOperation::subRanks
                 break;
             }
         }
-        return subRanks;
+        return move(subRanks);
     }
 }
 
@@ -496,25 +497,28 @@ bool Foam::fileOperations::masterUncollatedFileOperation::uniformFile
 void Foam::fileOperations::masterUncollatedFileOperation::readAndSend
 (
     const fileName& filePath,
-    const IOstream::compressionType cmp,
     const labelUList& procs,
     PstreamBuffers& pBufs
 )
 {
-    if (cmp == IOstream::compressionType::COMPRESSED)
+    if (debug)
+    {
+        Pout<< FUNCTION_NAME << ": Opening " << filePath << endl;
+    }
+
+    IFstream is(filePath, IOstream::streamFormat::BINARY);
+
+    if (!is.good())
+    {
+        FatalIOErrorInFunction(filePath) << "Cannot open file " << filePath
+            << exit(FatalIOError);
+    }
+
+    if (isA<igzstream>(is.stdStream()))
     {
         if (debug)
         {
-            Pout<< "masterUncollatedFileOperation::readAndSend :"
-                << " Opening compressed " << filePath << endl;
-        }
-
-        IFstream is(filePath, IOstream::streamFormat::BINARY);
-
-        if (!is.good())
-        {
-            FatalIOErrorInFunction(filePath) << "Cannot open file " << filePath
-                << exit(FatalIOError);
+            Pout<< FUNCTION_NAME << ": Reading compressed" << endl;
         }
 
         std::ostringstream stringStr;
@@ -530,21 +534,12 @@ void Foam::fileOperations::masterUncollatedFileOperation::readAndSend
     else
     {
         off_t count(Foam::fileSize(filePath));
-        IFstream is(filePath, IOstream::streamFormat::BINARY);
-
-        if (!is.good())
-        {
-            FatalIOErrorInFunction(filePath) << "Cannot open file " << filePath
-                << exit(FatalIOError);
-        }
-
 
         if (debug)
         {
-            Pout<< "masterUncollatedFileOperation::readStream :"
-                << " From " << filePath <<  " reading " << label(count)
-                << " bytes" << endl;
+            Pout<< FUNCTION_NAME << " : Reading " << count << " bytes " << endl;
         }
+
         List<char> buf(static_cast<label>(count));
         is.stdStream().read(buf.begin(), count);
 
@@ -557,36 +552,6 @@ void Foam::fileOperations::masterUncollatedFileOperation::readAndSend
 }
 
 
-void Foam::fileOperations::masterUncollatedFileOperation::readAndSend
-(
-    const fileName& fName,
-    const labelUList& procs,
-    PstreamBuffers& pBufs
-)
-{
-    if (Foam::exists(fName+".gz", false))
-    {
-        readAndSend
-        (
-            fName,
-            IOstream::compressionType::COMPRESSED,
-            procs,
-            pBufs
-        );
-    }
-    else
-    {
-        readAndSend
-        (
-            fName,
-            IOstream::compressionType::UNCOMPRESSED,
-            procs,
-            pBufs
-        );
-    }
-}
-
-
 Foam::autoPtr<Foam::ISstream>
 Foam::fileOperations::masterUncollatedFileOperation::read
 (
@@ -594,7 +559,7 @@ Foam::fileOperations::masterUncollatedFileOperation::read
     const label comm,
     const bool uniform,             // on comms master only
     const fileNameList& filePaths,  // on comms master only
-    const boolList& procValid       // on comms master only
+    const boolList& read            // on comms master only
 )
 {
     autoPtr<ISstream> isPtr;
@@ -612,8 +577,15 @@ Foam::fileOperations::masterUncollatedFileOperation::read
     {
         if (uniform)
         {
-            if (procValid[0])
+            if (read[0])
             {
+                if (filePaths[0].empty())
+                {
+                    FatalIOErrorInFunction(filePaths[0])
+                        << "cannot find file " << io.objectPath()
+                        << exit(FatalIOError);
+                }
+
                 DynamicList<label> validProcs(Pstream::nProcs(comm));
                 for
                 (
@@ -622,7 +594,7 @@ Foam::fileOperations::masterUncollatedFileOperation::read
                     proci++
                 )
                 {
-                    if (procValid[proci])
+                    if (read[proci])
                     {
                         validProcs.append(proci);
                     }
@@ -642,7 +614,7 @@ Foam::fileOperations::masterUncollatedFileOperation::read
         }
         else
         {
-            if (procValid[0])
+            if (read[0])
             {
                 if (filePaths[0].empty())
                 {
@@ -682,7 +654,7 @@ Foam::fileOperations::masterUncollatedFileOperation::read
 
                 const fileName& fPath = filePaths[proci];
 
-                if (procValid[proci] && !fPath.empty())
+                if (read[proci] && !fPath.empty())
                 {
                     // Note: handle compression ourselves since size cannot
                     // be determined without actually uncompressing
@@ -699,7 +671,7 @@ Foam::fileOperations::masterUncollatedFileOperation::read
     // IFstream. Else the information is in the PstreamBuffers (and
     // the special case of a uniform file)
 
-    if (procValid[Pstream::myProcNo(comm)])
+    if (read[Pstream::myProcNo(comm)])
     {
         // This processor needs to return something
 
@@ -718,7 +690,7 @@ Foam::fileOperations::masterUncollatedFileOperation::read
                     << " Done reading " << buf.size() << " bytes" << endl;
             }
             const fileName& fName = filePaths[Pstream::myProcNo(comm)];
-            isPtr.reset(new IStringStream(fName, buf));
+            isPtr.reset(new IStringStream(fName, buf, IOstream::BINARY));
 
             if (!io.readHeader(isPtr()))
             {
@@ -757,7 +729,8 @@ masterUncollatedFileOperation
 {
     if (verbose)
     {
-        Info<< "I/O    : " << typeName
+        InfoHeader
+            << "I/O    : " << typeName
             << " (maxMasterFileBufferSize " << maxMasterFileBufferSize << ')'
             << endl;
     }
@@ -800,7 +773,8 @@ masterUncollatedFileOperation
 {
     if (verbose)
     {
-        Info<< "I/O    : " << typeName
+        InfoHeader
+            << "I/O    : " << typeName
             << " (maxMasterFileBufferSize " << maxMasterFileBufferSize << ')'
             << endl;
     }
@@ -910,31 +884,33 @@ bool Foam::fileOperations::masterUncollatedFileOperation::chMod
 mode_t Foam::fileOperations::masterUncollatedFileOperation::mode
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
     return masterOp<mode_t, modeOp>
     (
         fName,
-        modeOp(followLink),
+        modeOp(checkVariants, followLink),
         Pstream::msgType(),
         comm_
     );
 }
 
 
-Foam::fileName::Type Foam::fileOperations::masterUncollatedFileOperation::type
+Foam::fileType Foam::fileOperations::masterUncollatedFileOperation::type
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
-    return fileName::Type
+    return fileType
     (
         masterOp<label, typeOp>
         (
             fName,
-            typeOp(followLink),
+            typeOp(checkVariants, followLink),
             Pstream::msgType(),
             comm_
         )
@@ -945,14 +921,14 @@ Foam::fileName::Type Foam::fileOperations::masterUncollatedFileOperation::type
 bool Foam::fileOperations::masterUncollatedFileOperation::exists
 (
     const fileName& fName,
-    const bool checkGzip,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
     return masterOp<bool, existsOp>
     (
         fName,
-        existsOp(checkGzip, followLink),
+        existsOp(checkVariants, followLink),
         Pstream::msgType(),
         comm_
     );
@@ -978,14 +954,14 @@ bool Foam::fileOperations::masterUncollatedFileOperation::isDir
 bool Foam::fileOperations::masterUncollatedFileOperation::isFile
 (
     const fileName& fName,
-    const bool checkGzip,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
     return masterOp<bool, isFileOp>
     (
         fName,
-        isFileOp(checkGzip, followLink),
+        isFileOp(checkVariants, followLink),
         Pstream::msgType(),
         comm_
     );
@@ -995,13 +971,14 @@ bool Foam::fileOperations::masterUncollatedFileOperation::isFile
 off_t Foam::fileOperations::masterUncollatedFileOperation::fileSize
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
     return masterOp<off_t, fileSizeOp>
     (
         fName,
-        fileSizeOp(followLink),
+        fileSizeOp(checkVariants, followLink),
         Pstream::msgType(),
         comm_
     );
@@ -1011,13 +988,14 @@ off_t Foam::fileOperations::masterUncollatedFileOperation::fileSize
 time_t Foam::fileOperations::masterUncollatedFileOperation::lastModified
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
     return masterOp<time_t, lastModifiedOp>
     (
         fName,
-        lastModifiedOp(followLink),
+        lastModifiedOp(checkVariants, followLink),
         Pstream::msgType(),
         comm_
     );
@@ -1027,13 +1005,14 @@ time_t Foam::fileOperations::masterUncollatedFileOperation::lastModified
 double Foam::fileOperations::masterUncollatedFileOperation::highResLastModified
 (
     const fileName& fName,
+    const bool checkVariants,
     const bool followLink
 ) const
 {
     return masterOp<double, lastModifiedHROp>
     (
         fName,
-        lastModifiedHROp(followLink),
+        lastModifiedHROp(checkVariants, followLink),
         Pstream::msgType(),
         comm_
     );
@@ -1089,7 +1068,7 @@ bool Foam::fileOperations::masterUncollatedFileOperation::rmDir
 Foam::fileNameList Foam::fileOperations::masterUncollatedFileOperation::readDir
 (
     const fileName& dir,
-    const fileName::Type type,
+    const fileType type,
     const bool filtergz,
     const bool followLink
 ) const
@@ -1887,7 +1866,7 @@ Foam::fileOperations::masterUncollatedFileOperation::readStream
     regIOobject& io,
     const fileName& fName,
     const word& typeName,
-    const bool valid
+    const bool read
 ) const
 {
     if (debug)
@@ -1895,7 +1874,7 @@ Foam::fileOperations::masterUncollatedFileOperation::readStream
         Pout<< "masterUncollatedFileOperation::readStream :"
             << " object : " << io.name()
             << " global : " << io.global()
-            << " fName : " << fName << " valid:" << valid << endl;
+            << " fName : " << fName << " read:" << read << endl;
     }
 
 
@@ -2089,10 +2068,17 @@ Foam::fileOperations::masterUncollatedFileOperation::readStream
             filePaths[Pstream::myProcNo()] = fName;
             Pstream::gatherList(filePaths);
             boolList procValid(Pstream::nProcs());
-            procValid[Pstream::myProcNo()] = valid;
+            procValid[Pstream::myProcNo()] = read;
             Pstream::gatherList(procValid);
 
-            return read(io, Pstream::worldComm, true, filePaths, procValid);
+            return this->read
+            (
+                io,
+                Pstream::worldComm,
+                true,
+                filePaths,
+                procValid
+            );
         }
         else
         {
@@ -2101,13 +2087,20 @@ Foam::fileOperations::masterUncollatedFileOperation::readStream
             filePaths[Pstream::myProcNo(comm_)] = fName;
             Pstream::gatherList(filePaths, Pstream::msgType(), comm_);
             boolList procValid(Pstream::nProcs(comm_));
-            procValid[Pstream::myProcNo(comm_)] = valid;
+            procValid[Pstream::myProcNo(comm_)] = read;
             Pstream::gatherList(procValid, Pstream::msgType(), comm_);
 
             // Uniform in local comm
             bool uniform = uniformFile(filePaths);
 
-            return read(io, comm_, uniform, filePaths, procValid);
+            return this->read
+            (
+                io,
+                comm_,
+                uniform,
+                filePaths,
+                procValid
+            );
         }
     }
 }
@@ -2123,13 +2116,20 @@ bool Foam::fileOperations::masterUncollatedFileOperation::read
 {
     bool ok = true;
 
-    if (io.globalObject())
+    if (io.global())
     {
         if (debug)
         {
             Pout<< "masterUncollatedFileOperation::read :"
                 << " Reading global object " << io.name() << endl;
         }
+
+        // Now that we have an IOobject path use it to detect & cache
+        // processor directory naming
+        (void)lookupProcessorsPath(io.objectPath());
+
+        // Trigger caching of times
+        (void)findTimes(io.time().path(), io.time().constant());
 
         bool ok = false;
         if (Pstream::master())  // comm_))
@@ -2152,23 +2152,15 @@ bool Foam::fileOperations::masterUncollatedFileOperation::read
         // scatter operation for regIOobjects
 
         // Get my communication order
-        // const List<Pstream::commsStruct>& comms =
-        //(
-        //    (Pstream::nProcs(comm_) < Pstream::nProcsSimpleSum)
-        //  ? Pstream::linearCommunication(comm_)
-        //  : Pstream::treeCommunication(comm_)
-        //);
-        // const Pstream::commsStruct& myComm = comms[Pstream::myProcNo(comm_)];
         const List<Pstream::commsStruct>& comms =
         (
-            (Pstream::nProcs(Pstream::worldComm) < Pstream::nProcsSimpleSum)
-          ? Pstream::linearCommunication(Pstream::worldComm)
-          : Pstream::treeCommunication(Pstream::worldComm)
+            (Pstream::nProcs() < Pstream::nProcsSimpleSum)
+          ? Pstream::linearCommunication()
+          : Pstream::treeCommunication()
         );
-        const Pstream::commsStruct& myComm =
-            comms[Pstream::myProcNo(Pstream::worldComm)];
+        const Pstream::commsStruct& myComm = comms[Pstream::myProcNo()];
 
-        // Reveive from up
+        // Receive from up
         if (myComm.above() != -1)
         {
             IPstream fromAbove
@@ -2221,7 +2213,7 @@ bool Foam::fileOperations::masterUncollatedFileOperation::writeObject
     IOstream::streamFormat fmt,
     IOstream::versionNumber ver,
     IOstream::compressionType cmp,
-    const bool valid
+    const bool write
 ) const
 {
     fileName pathName(io.objectPath());
@@ -2229,7 +2221,7 @@ bool Foam::fileOperations::masterUncollatedFileOperation::writeObject
     if (debug)
     {
         Pout<< "masterUncollatedFileOperation::writeObject :"
-            << " io:" << pathName << " valid:" << valid << endl;
+            << " io:" << pathName << " write:" << write << endl;
     }
 
     // Make sure to pick up any new times
@@ -2243,7 +2235,7 @@ bool Foam::fileOperations::masterUncollatedFileOperation::writeObject
             fmt,
             ver,
             cmp,
-            valid
+            write
         )
     );
     Ostream& os = osPtr();
@@ -2303,7 +2295,7 @@ Foam::instantList Foam::fileOperations::masterUncollatedFileOperation::findTimes
         // Note: do we also cache if no times have been found since it might
         //       indicate a directory that is being filled later on ...
 
-        instantList* tPtr = new instantList(times.xfer());
+        instantList* tPtr = new instantList(move(times));
 
         times_.insert(directory, tPtr);
 
@@ -2415,13 +2407,6 @@ Foam::fileOperations::masterUncollatedFileOperation::NewIFstream
                         << " Opening global file " << filePath << endl;
                 }
 
-                IOstream::compressionType cmp
-                (
-                    Foam::exists(filePath+".gz", false)
-                  ? IOstream::compressionType::COMPRESSED
-                  : IOstream::compressionType::UNCOMPRESSED
-                );
-
                 labelList procs(Pstream::nProcs(Pstream::worldComm)-1);
                 for
                 (
@@ -2433,7 +2418,7 @@ Foam::fileOperations::masterUncollatedFileOperation::NewIFstream
                     procs[proci-1] = proci;
                 }
 
-                readAndSend(filePath, cmp, procs, pBufs);
+                readAndSend(filePath, procs, pBufs);
             }
             else
             {
@@ -2444,20 +2429,7 @@ Foam::fileOperations::masterUncollatedFileOperation::NewIFstream
                     proci++
                 )
                 {
-                    IOstream::compressionType cmp
-                    (
-                        Foam::exists(filePaths[proci]+".gz", false)
-                      ? IOstream::compressionType::COMPRESSED
-                      : IOstream::compressionType::UNCOMPRESSED
-                    );
-
-                    readAndSend
-                    (
-                        filePaths[proci],
-                        cmp,
-                        labelList(1, proci),
-                        pBufs
-                    );
+                    readAndSend(filePaths[proci], labelList(1, proci), pBufs);
                 }
             }
         }
@@ -2496,7 +2468,10 @@ Foam::fileOperations::masterUncollatedFileOperation::NewIFstream
             // Note: IPstream is not an IStream so use a IStringStream to
             //       convert the buffer. Note that we construct with a string
             //       so it holds a copy of the buffer.
-            return autoPtr<ISstream>(new IStringStream(filePath, buf));
+            return autoPtr<ISstream>
+            (
+                new IStringStream(filePath, buf, IOstream::BINARY)
+            );
         }
     }
     else
@@ -2514,7 +2489,7 @@ Foam::fileOperations::masterUncollatedFileOperation::NewOFstream
     IOstream::streamFormat fmt,
     IOstream::versionNumber ver,
     IOstream::compressionType cmp,
-    const bool valid
+    const bool write
 ) const
 {
     return autoPtr<Ostream>
@@ -2526,7 +2501,7 @@ Foam::fileOperations::masterUncollatedFileOperation::NewOFstream
             ver,
             cmp,
             false,      // append
-            valid
+            write
         )
     );
 }
