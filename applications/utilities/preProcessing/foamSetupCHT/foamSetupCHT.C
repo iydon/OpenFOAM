@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2018-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -52,7 +52,7 @@ Description
       + fluid: g
       + solid
     + materials
-      + air: radiationProperties, thermophysicalProperties, turbulenceProperties
+      + air: radiationProperties, thermophysicalProperties, momentumTransport
       + aluminium: radiationProperties, thermophysicalProperties
       + ...
 
@@ -145,22 +145,31 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // This needs checking ...
             FatalIOErrorIn(args.executable().c_str(), materialProperties)
                 << "Cannot find region type file "
                 << sourceDir << exit(FatalIOError);
         }
 
-        Info<< "\tCreating constant/" << regionName
-            << " directory with " << regionMaterial
-            << " material" << endl;
-        cpFiles(constantDir/regionType, currentDir/"constant"/regionName);
-        cpFiles(materialsDir/regionMaterial, currentDir/"constant"/regionName);
+        const fileName matDir(materialsDir/regionMaterial);
+        if (isDir(matDir))
+        {
+            Info<< "\tCreating constant/" << regionName
+                << " directory with " << regionMaterial
+                << " material" << endl;
+            cpFiles(constantDir/regionType, currentDir/"constant"/regionName);
+            cpFiles(matDir, currentDir/"constant"/regionName);
 
-        // system/<region>: from fluid or solid templ
-        Info<< "\tCreating system/" << regionName
-            << " directory" << endl;
-        cpFiles(systemDir/regionType, currentDir/"system"/regionName);
+            // system/<region>: from fluid or solid template
+            Info<< "\tCreating system/" << regionName
+                << " directory" << endl;
+            cpFiles(systemDir/regionType, currentDir/"system"/regionName);
+        }
+        else
+        {
+            FatalIOErrorIn(args.executable().c_str(), materialProperties)
+                << "Cannot find region material folder "
+                << regionMaterial << exit(FatalIOError);
+        }
     }
 
     regionProperties.add("regions", regionInfo);

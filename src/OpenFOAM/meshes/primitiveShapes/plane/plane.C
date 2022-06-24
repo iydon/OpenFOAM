@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -160,20 +160,20 @@ Foam::plane::plane(const dictionary& dict)
 
     if (planeType == "planeEquation")
     {
-        const dictionary& subDict = dict.subDict("planeEquationDict");
+        const dictionary& subDict = dict.optionalSubDict("planeEquationDict");
         scalarList C(4);
 
-        C[0] = readScalar(subDict.lookup("a"));
-        C[1] = readScalar(subDict.lookup("b"));
-        C[2] = readScalar(subDict.lookup("c"));
-        C[3] = readScalar(subDict.lookup("d"));
+        C[0] = subDict.lookup<scalar>("a");
+        C[1] = subDict.lookup<scalar>("b");
+        C[2] = subDict.lookup<scalar>("c");
+        C[3] = subDict.lookup<scalar>("d");
 
         calcPntAndVec(C);
 
     }
     else if (planeType == "embeddedPoints")
     {
-        const dictionary& subDict = dict.subDict("embeddedPointsDict");
+        const dictionary& subDict = dict.optionalSubDict("embeddedPointsDict");
 
         point point1(subDict.lookup("point1"));
         point point2(subDict.lookup("point2"));
@@ -183,7 +183,7 @@ Foam::plane::plane(const dictionary& dict)
     }
     else if (planeType == "pointAndNormal")
     {
-        const dictionary& subDict = dict.subDict("pointAndNormalDict");
+        const dictionary& subDict = dict.optionalSubDict("pointAndNormalDict");
 
         point_ =
             subDict.found("basePoint")

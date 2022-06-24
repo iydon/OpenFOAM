@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -200,7 +200,7 @@ Foam::pairPatchAgglomeration::pairPatchAgglomeration
     maxLevels_(50),
     nFacesInCoarsestLevel_
     (
-        readLabel(controlDict.lookup("nFacesInCoarsestLevel"))
+        controlDict.lookup<label>("nFacesInCoarsestLevel")
     ),
     featureAngle_
     (
@@ -410,6 +410,7 @@ void Foam::pairPatchAgglomeration::agglomerate()
             }
 
             reduce(nCoarseFaces, sumOp<label>());
+            reduce(agglomOK, orOp<bool>());
 
         } while (!agglomOK);
 

@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2018-2020 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2018-2019 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -74,14 +74,7 @@ Foam::pimpleControl::~pimpleControl()
 
 bool Foam::pimpleControl::read()
 {
-    if (!pimpleNoLoopControl::read() || !pimpleLoop::read())
-    {
-        return false;
-    }
-
-    nCorrPimple_ = dict().lookupOrDefault<label>("nOuterCorrectors", 1);
-
-    return true;
+    return pimpleNoLoopControl::read() && pimpleLoop::read();
 }
 
 
@@ -108,14 +101,12 @@ bool Foam::pimpleControl::run(Time& time)
 {
     read();
 
-    time.run();
-
     if (!endIfConverged(time))
     {
         storePrevIterFields();
     }
 
-    return time.running();
+    return time.run();
 }
 
 
@@ -123,22 +114,12 @@ bool Foam::pimpleControl::loop(Time& time)
 {
     read();
 
-    time.run();
-
     if (!endIfConverged(time))
     {
         storePrevIterFields();
     }
 
-    if (time.running())
-    {
-        time ++;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return time.loop();
 }
 
 

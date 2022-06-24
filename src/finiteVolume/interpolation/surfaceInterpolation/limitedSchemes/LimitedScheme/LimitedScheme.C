@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2018 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2021 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -76,6 +76,9 @@ void Foam::LimitedScheme<Type, Limiter, LimitFunc>::calcLimiter
         );
     }
 
+    const typename GeometricField<Type, fvPatchField, volMesh>::Boundary&
+        bPhi = phi.boundaryField();
+
     surfaceScalarField::Boundary& bLim =
         limiterField.boundaryFieldRef();
 
@@ -83,7 +86,7 @@ void Foam::LimitedScheme<Type, Limiter, LimitFunc>::calcLimiter
     {
         scalarField& pLim = bLim[patchi];
 
-        if (bLim[patchi].coupled())
+        if (bPhi[patchi].coupled())
         {
             const scalarField& pCDweights = CDweights.boundaryField()[patchi];
             const scalarField& pFaceFlux =
@@ -182,14 +185,9 @@ Foam::LimitedScheme<Type, Limiter, LimitFunc>::limiter
     {
         tmp<surfaceScalarField> tlimiterField
         (
-            new surfaceScalarField
+            surfaceScalarField::New
             (
-                IOobject
-                (
-                    limiterFieldName,
-                    mesh.time().timeName(),
-                    mesh
-                ),
+                limiterFieldName,
                 mesh,
                 dimless
             )

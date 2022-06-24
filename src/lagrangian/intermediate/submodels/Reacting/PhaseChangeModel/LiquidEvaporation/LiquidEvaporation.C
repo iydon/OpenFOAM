@@ -173,7 +173,7 @@ void Foam::LiquidEvaporation<CloudType>::calculate
         const label gid = liqToCarrierMap_[i];
         const label lid = liqToLiqMap_[i];
 
-        // vapour diffusivity [m2/s]
+        // vapour diffusivity [m^2/s]
         const scalar Dab = liquids_.properties()[lid].D(pc, Ts);
 
         // saturation pressure for species i [pa]
@@ -194,7 +194,7 @@ void Foam::LiquidEvaporation<CloudType>::calculate
         const scalar kc = Sh*Dab/(d + rootVSmall);
 
         // vapour concentration at surface [kmol/m^3] at film temperature
-        const scalar Cs = pSat/(RR*Ts);
+        const scalar Cs = X[lid]*pSat/(RR*Ts);
 
         // vapour concentration in bulk gas [kmol/m^3] at film temperature
         const scalar Cinf = Xc[gid]*pc/(RR*Ts);

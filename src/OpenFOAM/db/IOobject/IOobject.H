@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -94,6 +94,9 @@ class IOobject
 {
 
 public:
+
+    //- Keyword for the FoamFile header sub-dictionary
+    static constexpr const char* foamFile = "FoamFile";
 
     // Public data types
 
@@ -207,6 +210,11 @@ public:
 
         //- Return member (name without the extension)
         static word member(const word& name);
+
+        //- Return the name of the object within the given model
+        //  as <model>:<name>
+        template<class Name>
+        static inline word modelName(Name name, const word& model);
 
         //- Type of file modification checking
         static fileCheckTypes fileModificationChecking;
@@ -372,6 +380,10 @@ public:
             //- Return member (name without the extension)
             word member() const;
 
+            //- Return the name of the object within this model
+            //  as <model>:<name>
+            inline word modelName(const char* name) const;
+
             const fileName& rootPath() const;
 
             const fileName& caseName() const;
@@ -401,10 +413,19 @@ public:
                 const fileName& local = ""
             ) const;
 
+            //- Return the path relative to the case
+            fileName localPath() const;
+
             //- Return complete path + object name
             fileName objectPath() const
             {
                 return path()/name();
+            }
+
+            //- Return complete localPath + object name
+            fileName localObjectPath() const
+            {
+                return localPath()/name();
             }
 
             //- Helper for filePath that searches locally.

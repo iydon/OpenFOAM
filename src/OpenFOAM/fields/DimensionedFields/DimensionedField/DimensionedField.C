@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Copyright (C) 2011-2019 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2020 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -25,6 +25,7 @@ License
 
 #include "DimensionedField.H"
 #include "dimensionedType.H"
+#include "Time.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -282,7 +283,7 @@ DimensionedField<Type, GeoMesh>::New
                 mesh,
                 IOobject::NO_READ,
                 IOobject::NO_WRITE,
-                false
+                mesh.cacheTemporaryObject(name)
             ),
             mesh,
             ds,
@@ -312,7 +313,7 @@ DimensionedField<Type, GeoMesh>::New
                 mesh,
                 IOobject::NO_READ,
                 IOobject::NO_WRITE,
-                false
+                mesh.cacheTemporaryObject(name)
             ),
             mesh,
             dt,
@@ -342,7 +343,7 @@ DimensionedField<Type, GeoMesh>::New
                 df.db(),
                 IOobject::NO_READ,
                 IOobject::NO_WRITE,
-                false
+                df.db().cacheTemporaryObject(newName)
             ),
             df
         )
@@ -370,7 +371,7 @@ DimensionedField<Type, GeoMesh>::New
                 tdf().db(),
                 IOobject::NO_READ,
                 IOobject::NO_WRITE,
-                false
+                tdf().db().cacheTemporaryObject(newName)
             ),
             tdf
         )
@@ -382,7 +383,9 @@ DimensionedField<Type, GeoMesh>::New
 
 template<class Type, class GeoMesh>
 DimensionedField<Type, GeoMesh>::~DimensionedField()
-{}
+{
+    db().cacheTemporaryObject(*this);
+}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
@@ -408,7 +411,7 @@ DimensionedField<Type, GeoMesh>::component
         )
     );
 
-    Foam::component(result(), *this, d);
+    Foam::component(result.ref(), *this, d);
 
     return result;
 }
@@ -456,7 +459,7 @@ DimensionedField<Type, GeoMesh>::T() const
         )
     );
 
-    Foam::T(result(), *this);
+    Foam::T(result.ref(), *this);
 
     return result;
 }
